@@ -77,28 +77,6 @@ namespace Ascendant.Graphics {
 
     readonly float fFrustumScale = CalcFrustumScale(20f);
 
-    static readonly Quaternion[] g_Orients = {
-      new Quaternion(0.7071f, 0.7071f, 0.0f, 0.0f),
-	    new Quaternion(0.5f, 0.5f, -0.5f, 0.5f),
-	    new Quaternion(-0.4895f, -0.7892f, -0.3700f, -0.02514f),
-	    new Quaternion(0.4895f, 0.7892f, 0.3700f, 0.02514f),
-
-	    new Quaternion(0.3840f, -0.1591f, -0.7991f, -0.4344f),
-	    new Quaternion(0.5537f, 0.5208f, 0.6483f, 0.0410f),
-	    new Quaternion(0.0f, 0.0f, 1.0f, 0.0f),
-                                             };
-
-    static Key[] g_OrientKeys =
-{
-	Key.Q,
-	Key.W,
-	Key.E,
-	Key.R,
-
-	Key.T,
-	Key.Y,
-	Key.U,
-};
 
     static float CalcFrustumScale(float fFovDeg) {
       const float degToRad = 3.14159f * 2.0f / 360.0f;
