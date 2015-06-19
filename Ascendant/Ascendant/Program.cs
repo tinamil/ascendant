@@ -10,8 +10,9 @@ using OpenTK.Input;
 namespace Ascendant {
   class Program {
     static void Main(string[] args) {
-      using(var window = new Window()) {
+      using(var window = new Window(640, 480, GraphicsMode.Default, AppConfig.Default.title, GameWindowFlags.Default,  DisplayDevice.Default, 4, 0, GraphicsContextFlags.Debug)) {
         window.Run(60);
+        
       }
     }
   }

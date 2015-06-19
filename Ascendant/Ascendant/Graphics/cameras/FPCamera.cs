@@ -8,35 +8,37 @@ using OpenTK.Input;
 using Debug = System.Diagnostics.Debug;
 
 namespace Ascendant.Graphics {
-  class FirstPersonCamera {
-    public Vector3 Position;
-    public Vector3 Rotation;
-    public Quaternion Orientation;
 
-    public Matrix4 Matrix;
-    public Matrix4 Model;
-    public Matrix4 Projection;
+  class FirstPersonCamera : ICamera  {
+    protected Vector3 Position = Vector3.Zero;
+    protected Vector3 Rotation = Vector3.Zero;
+    protected Quaternion Orientation = Quaternion.Identity;
 
     public FirstPersonCamera() {
-      Matrix = Matrix4.Identity;
-      Projection = Matrix4.Identity;
-      Orientation = Quaternion.Identity;
     }
 
-    public void Update() {
+    public Matrix4 GetWorldToCameraMatrix() {
       Orientation =
         Quaternion.FromAxisAngle(Vector3.UnitY, Rotation.Y) *
-        Quaternion.FromAxisAngle(Vector3.UnitX, Rotation.X);
+        Quaternion.FromAxisAngle(Vector3.UnitX, Rotation.X) *
+        Quaternion.FromAxisAngle(Vector3.UnitZ, Rotation.Z);
 
       var forward = Vector3.Transform(Vector3.UnitZ, Orientation);
-      Model = Matrix4.LookAt(Position, Position + forward, Vector3.UnitY);
-      Matrix = Model * Projection;
+      return Matrix4.LookAt(Position, Position + forward, Vector3.UnitY);
     }
 
-    public void Resize(int width, int height) {
-      Projection = Matrix4.CreatePerspectiveFieldOfView(
-        MathHelper.PiOver4, (float)width / height, 0.1f, 1000f
-      );
+    public void Rotate(Vector2 newRotation){
+      TurnX(newRotation.X);
+      TurnY(newRotation.Y);
+    }
+    public void Move(Vector3 translation) {
+      MoveX(translation.X);
+      MoveY(translation.Y);
+      MoveZ(translation.Z);
+    }
+
+    public void LookAt(Vector3 lookTarget) {
+      Rotation = lookTarget;
     }
 
     public void TurnX(float a) {
