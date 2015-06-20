@@ -70,7 +70,7 @@ namespace Ascendant {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.05")]
         public float mousespeed {
             get {
                 return ((float)(this["mousespeed"]));

@@ -68,6 +68,7 @@
   <ItemGroup>
     <Compile Include="AppConfig.cs" />
     <Compile Include="Graphics\cameras\FPCamera.cs" />
+    <Compile Include="Graphics\objects\MyObjParser.cs" />
     <Compile Include="Graphics\DisplayObject.cs" />
     <Compile Include="Graphics\Game.cs" />
     <Compile Include="Graphics\Framework.cs" />
@@ -84,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Graphics\objects\mesh\FinalBaseMesh.obj" />
     <None Include="Graphics\shaders\ColorMultUniform.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

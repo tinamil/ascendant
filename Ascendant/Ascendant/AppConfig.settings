@@ -15,7 +15,7 @@
       <Value Profile="(Default)">Ascension</Value>
     </Setting>
     <Setting Name="mousespeed" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.1</Value>
+      <Value Profile="(Default)">0.05</Value>
     </Setting>
   </Settings>
 </SettingsFile>

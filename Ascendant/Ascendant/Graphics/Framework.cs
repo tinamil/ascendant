@@ -23,8 +23,8 @@ namespace Ascendant.Graphics {
       if(status == 0) {
         string strInfoLog;
         GL.GetShaderInfoLog(shader, out strInfoLog);
-
         Debug.WriteLine("Compile failure in " + eShaderType.ToString() + " shader:\n" + strInfoLog, "Error");
+        throw new Exception();
       }
 
       return shader;
@@ -45,6 +45,7 @@ namespace Ascendant.Graphics {
         string strInfoLog;
         GL.GetProgramInfoLog(program, out strInfoLog);
         Debug.WriteLine("Linker failure: " + strInfoLog, "Error");
+        throw new Exception();
       }
 
       foreach(int shader in shaderList) {

@@ -7,7 +7,7 @@ using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 using OpenTK.Graphics;
 namespace Ascendant.Graphics {
-    class DisplayObject {
+    class DisplayObject : Obj{
         Vector3 position;
         Vector3 scale;
         Quaternion orientation;
@@ -18,21 +18,14 @@ namespace Ascendant.Graphics {
 
         uint vertexArrayObject;
 
-        ushort[] indices;
-
-        float[] vertices;
-        Color4[] colors;
         Game parent;
         List<DisplayObject> children;
-        public DisplayObject(Game par, Vector3 position, Vector3 scale, Quaternion orientation, ushort[] index, float[] vertex, Color4[] vertexColors) {
+        public DisplayObject(Game par, Vector3 position, Vector3 scale, Quaternion orientation) {
             parent = par;
             children = new List<DisplayObject>();
             this.position = position;
             this.scale = scale;
             this.orientation = orientation;
-            indices = index;
-            vertices = vertex;
-            colors = vertexColors;
             LoadBuffers();
             LoadVertexArray();
         }
@@ -55,7 +48,6 @@ namespace Ascendant.Graphics {
 
         }
 
-        internal static readonly int colorSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Color4));
         internal void LoadBuffers() {
             GL.GenBuffers(1, out vertexBufferObject);
 
@@ -72,7 +64,7 @@ namespace Ascendant.Graphics {
             GL.GenBuffers(1, out colorBufferObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, colorBufferObject);
-            GL.BufferData<Color4>(BufferTarget.ArrayBuffer, (IntPtr)(colors.Length * colorSize), colors, BufferUsageHint.StaticDraw);
+            GL.BufferData<Vector4>(BufferTarget.ArrayBuffer, (IntPtr)(colors.Length * Vector4.SizeInBytes), colors, BufferUsageHint.StaticDraw);
             
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }

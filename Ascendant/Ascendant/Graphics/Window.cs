@@ -43,22 +43,19 @@ namespace Ascendant.Graphics {
       GL.Viewport(0, 0, Width, Height);
     }
 
-    protected void UpdateWindowFrame(object sender, FrameEventArgs e) {
-      game.Update();
-    }
-
-    protected void WindowFocusChange(object sender, EventArgs e) {
-      game.FocusChange();
-    }
 
     public Window(int width, int height, GraphicsMode graphicsMode, String title, GameWindowFlags windowFlags,
       DisplayDevice displayDevice, int majorVersion, int minorVersion, GraphicsContextFlags graphicsContextFlags)
       : base(width, height, graphicsMode, title, windowFlags, displayDevice, majorVersion, minorVersion, graphicsContextFlags) {
-        game = new Game(this);
+        initialize();
+    }
+
+    private void initialize() {
+      game = new Game(this);
       //this.Closed
       //this.Closing
       //this.Disposed
-      this.FocusedChanged += WindowFocusChange;
+      //this.FocusedChanged += WindowFocusChange;
       //this.IconChanged
       //this.KeyDown
       //this.KeyPress
@@ -75,10 +72,14 @@ namespace Ascendant.Graphics {
       this.Resize += ResizeWindow;
       //this.TitleChanged
       //this.Unload                  
-      this.UpdateFrame += UpdateWindowFrame;
+      //this.UpdateFrame += UpdateWindowFrame;
       //this.VisibleChanged
       //this.WindowBorderChanged
       //this.WindowStateChanged
+    }
+
+    public Window() {
+      initialize();
     }
   }
 }
