@@ -9,74 +9,85 @@ using Debug = System.Diagnostics.Debug;
 
 namespace Ascendant.Graphics {
 
-  class FirstPersonCamera : ICamera  {
-    protected Vector3 Position = Vector3.Zero;
-    protected Vector3 Rotation = Vector3.Zero;
-    protected Quaternion Orientation = Quaternion.Identity;
+    class FirstPersonCamera : ICamera {
+        public Vector3 Position = new Vector3(0, 0, -10);
+        public Vector3 Rotation = Vector3.Zero;
+        public Quaternion Orientation = Quaternion.Identity;
+        public Vector3 Up = Vector3.UnitY;
+ 
+        protected Matrix4 WorldToCameraMatrix;
+        protected bool cameraMoved = true;
 
-    public FirstPersonCamera() {
-    }
+        public FirstPersonCamera() {
+        }
 
-    public Matrix4 GetWorldToCameraMatrix() {
-      Orientation =
-        Quaternion.FromAxisAngle(Vector3.UnitY, Rotation.Y) *
-        Quaternion.FromAxisAngle(Vector3.UnitX, Rotation.X) *
-        Quaternion.FromAxisAngle(Vector3.UnitZ, Rotation.Z);
+        public void RefreshMatrix() {
+            Orientation =
+                Quaternion.FromAxisAngle(Vector3.UnitY, Rotation.Y) *
+                Quaternion.FromAxisAngle(Vector3.UnitX, Rotation.X);
 
-      var forward = Vector3.Transform(Vector3.UnitZ, Orientation);
-      return Matrix4.LookAt(Position, Position + forward, Vector3.UnitY);
-    }
+            var forward = Vector3.Transform(Vector3.UnitZ, Orientation);
+            WorldToCameraMatrix = Matrix4.LookAt(Position, Position + forward, Up);
+        }
 
-    public void Rotate(Vector2 newRotation){
-      TurnX(newRotation.X);
-      TurnY(newRotation.Y);
-    }
-    public void Move(Vector3 translation) {
-      MoveX(translation.X);
-      MoveY(translation.Y);
-      MoveZ(translation.Z);
-    }
+        public Matrix4 GetWorldToCameraMatrix() {
+            if (cameraMoved) {
+                RefreshMatrix();
+                cameraMoved = false;
+                Debug.WriteLine("Position: {0}, {1}, {2}, Rotation: {3}, {4}, {5}", Position.X, Position.Y, Position.Z, Orientation.X, Orientation.Y, Orientation.Z);
+            }
+            return WorldToCameraMatrix;
+        }
 
-    public void LookAt(Vector3 lookTarget) {
-      Rotation = lookTarget;
-    }
+        public void Rotate(Vector2 newRotation) {
+            TurnY(newRotation.X * AppConfig.Default.mousespeed);
+            TurnX(-newRotation.Y * AppConfig.Default.mousespeed);
+            cameraMoved = true;
+        }
+        public void Move(Vector3 translation) {
+            MoveX(translation.X);
+            MoveY(translation.Y);
+            MoveZ(translation.Z);
+            cameraMoved = true;
+        }
 
-    public void TurnX(float a) {
-      Rotation.X += a;
-      Rotation.X = MathHelper.Clamp(Rotation.X, -1.57f, 1.57f);
-    }
+        public void LookAt(Vector3 lookTarget) {
+            throw new NotImplementedException();
+        }
 
-    public void TurnY(float a) {
-      Rotation.Y += a;
-      Rotation.Y = ClampCircular(Rotation.Y, 0, MathHelper.TwoPi);
-    }
+        internal void TurnX(float a) {
+            if (Math.Abs(a) > float.Epsilon) {
+                Rotation.X += a;
+                Rotation.X = MathHelper.Clamp(Rotation.X, -1.57f, 1.57f);
+            }
+        }
 
-    public void MoveX(float a) {
-      Position += Vector3.Transform(Vector3.UnitX * a, Quaternion.FromAxisAngle(Vector3.UnitY, Rotation.Y));
-    }
+        internal void TurnY(float a) {
+            if (Math.Abs(a) > float.Epsilon) {
+                Rotation.Y += a;
+                Rotation.Y = ClampCircular(Rotation.Y, 0, MathHelper.TwoPi);
+            }
+        }
 
-    public void MoveY(float a) {
-      Position += Vector3.Transform(Vector3.UnitY * a, Quaternion.FromAxisAngle(Vector3.UnitY, Rotation.Y));
-    }
+        internal void MoveX(float a) {
+            if (Math.Abs(a) > float.Epsilon)
+            Position -= Vector3.Transform(Vector3.UnitX * a, Orientation );
+        }
 
-    public void MoveZ(float a) {
-      Position += Vector3.Transform(Vector3.UnitZ * a, Quaternion.FromAxisAngle(Vector3.UnitY, Rotation.Y));
-    }
+        internal void MoveY(float a) {
+            if (Math.Abs(a) > float.Epsilon)
+            Position += Vector3.Transform(Vector3.UnitZ * a, Orientation);
+        }
 
-    public void MoveYLocal(float a) {
-      Position += Vector3.Transform(Vector3.UnitY * a, Orientation);
-    }
+        internal void MoveZ(float a) {
+            if (Math.Abs(a) > float.Epsilon)
+            Position += Vector3.Transform(Vector3.UnitY * a, Orientation);
+        }
 
-    public void MoveZLocal(float a) {
-      Position += Vector3.Transform(Vector3.UnitZ * a, Orientation);
+        public static float ClampCircular(float n, float min, float max) {
+            if (n >= max) n -= max;
+            if (n < min) n += max;
+            return n;
+        }
     }
-
-    public static float ClampCircular(float n, float min, float max) {
-      if(n >= max)
-        n -= max;
-      if(n < min)
-        n += max;
-      return n;
-    }
-  }
 }

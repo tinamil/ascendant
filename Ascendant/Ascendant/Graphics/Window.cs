@@ -15,11 +15,6 @@ namespace Ascendant.Graphics {
 
     Game game;
     
-    Matrix4 CameraToClipMatrix = Matrix4.Identity;
-    Matrix4 ViewProjectionMatrix = Matrix4.Identity;
-
-    int cameraToClipMatrixUnif;
-
     protected void LoadWindow(object sender, EventArgs e) {
       GL.Enable(EnableCap.CullFace);
       GL.CullFace(CullFaceMode.Back);
@@ -33,7 +28,7 @@ namespace Ascendant.Graphics {
 
    
     protected void RenderWindow(object sender, FrameEventArgs e) {
-      GL.ClearColor(System.Drawing.Color.Black);
+      GL.ClearColor(System.Drawing.Color.PowderBlue);
       GL.ClearDepth(1.0f);
       GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
