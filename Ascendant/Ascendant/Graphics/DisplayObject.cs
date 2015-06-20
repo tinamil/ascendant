@@ -7,7 +7,8 @@ using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 using OpenTK.Graphics;
 namespace Ascendant.Graphics {
-    class DisplayObject : Obj{
+    class DisplayObject{
+        Mesh mesh;
         Vector3 position;
         Vector3 scale;
         Quaternion orientation;
@@ -20,8 +21,9 @@ namespace Ascendant.Graphics {
 
         Game parent;
         List<DisplayObject> children;
-        public DisplayObject(Game par, Vector3 position, Vector3 scale, Quaternion orientation) {
+        public DisplayObject(Game par, Vector3 position, Vector3 scale, Quaternion orientation, String filename) {
             parent = par;
+            mesh = MyParser.parseMesh(filename);
             children = new List<DisplayObject>();
             this.position = position;
             this.scale = scale;
@@ -42,6 +44,9 @@ namespace Ascendant.Graphics {
             GL.EnableVertexAttribArray(1);
             GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, 0, 0);
 
+
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferObject);
+
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
             GL.BindVertexArray(0);
@@ -52,19 +57,19 @@ namespace Ascendant.Graphics {
             GL.GenBuffers(1, out vertexBufferObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(vertices.Length * sizeof(float)), vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(mesh.vertices.Length * sizeof(float)), mesh.vertices, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
             GL.GenBuffers(1, out indexBufferObject);
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(indices.Length * sizeof(ushort)), indices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(mesh.indices.Length * sizeof(ushort)), mesh.indices, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
             GL.GenBuffers(1, out colorBufferObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, colorBufferObject);
-            GL.BufferData<Vector4>(BufferTarget.ArrayBuffer, (IntPtr)(colors.Length * Vector4.SizeInBytes), colors, BufferUsageHint.StaticDraw);
+            GL.BufferData<Vector4>(BufferTarget.ArrayBuffer, (IntPtr)(mesh.colors.Length * Vector4.SizeInBytes), mesh.colors, BufferUsageHint.StaticDraw);
             
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
@@ -83,8 +88,8 @@ namespace Ascendant.Graphics {
             GL.UniformMatrix4(modelToCameraMatrixUnif, false, ref ModelToCameraMatrix);
 
             //Draw this
-            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedShort, indices);
-
+            GL.DrawElements(PrimitiveType.Triangles, mesh.indices.Length, DrawElementsType.UnsignedShort, 0);
+            
             //Draw children
             foreach (DisplayObject child in children) {
                 child.Render(ref ModelToCameraMatrix, modelToCameraMatrixUnif);

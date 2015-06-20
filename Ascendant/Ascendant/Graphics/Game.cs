@@ -27,7 +27,6 @@ namespace Ascendant.Graphics {
     Matrix4 CameraToClipMatrix;
 
     DisplayObject diamond;
-    DisplayObject floor;
 
     public Game(Window window) {
       this.window = window;
@@ -36,57 +35,7 @@ namespace Ascendant.Graphics {
       window.FocusedChanged += FocusChange;
       window.Load += GameLoad;
       InitalizeOpenGL();
-      diamond = new DisplayObject(this, Vector3.Zero, Vector3.One, Quaternion.FromAxisAngle(Vector3.UnitZ, 0), new ushort[]{
-            0, 1, 2,
-	        1, 0, 3,
-	        2, 3, 0,
-	        3, 2, 1,
-
-	        5, 4, 6,
-	        4, 5, 7,
-	        7, 6, 4,
-	        6, 7, 5,
-        }, new float[]{
-            +1.0f, +1.0f, +1.0f,
-	        -1.0f, -1.0f, +1.0f,
-	        -1.0f, +1.0f, -1.0f,
-	        +1.0f, -1.0f, -1.0f,
-
-	        -1.0f, -1.0f, -1.0f,
-	        +1.0f, +1.0f, -1.0f,
-	        +1.0f, -1.0f, +1.0f,
-	        -1.0f, +1.0f, +1.0f,
-
-        }, new Vector4[] {
-            new Vector4(0f, 1f, 0f, 1f),
-            new Vector4(0f, 0f, 1f, 1f),
-            new Vector4(1f, 0f, 0f, 1f),
-            new Vector4(.8f, .8f, 0f, 1f),
-            
-            new Vector4(0f, 1f, 0f, 1f),
-            new Vector4(0f, 0f, 1f, 1f),
-            new Vector4(1f, 0f, 0f, 1f),
-            new Vector4(.8f, .8f, 0f, 1f),
-       });
-      floor = new DisplayObject(this, new Vector3(0f, 0f, -1), new Vector3(10f, 10f, 10f), Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.PiOver2), new ushort[]{
-                 0, 1, 2, 
-                 0, 2, 1,
-                 2, 3, 0,
-                 2, 0, 3,
-        }, new float[]{
-           
-            0.5f, 0, -0.5f,
-            0.5f, 0, 0.5f,
-            -0.5f, 0, 0.5f,
-            -0.5f, 0, -0.5f,
-
-        }, new Vector4[] {
-            new Vector4(.0f, .0f, 0f, 1f),
-            new Vector4(.0f, .0f, 0f, 1f),
-            new Vector4(.0f, .0f, 0f, 1f),
-            new Vector4(.0f, .0f, 0f, 1f),
-       });
-
+      diamond = new DisplayObject(this, Vector3.Zero, Vector3.One, Quaternion.FromAxisAngle(Vector3.UnitY, 0), @"Graphics\objects\mesh\Diamond.obj");
     }
 
     private void InitalizeOpenGL() {
@@ -144,7 +93,6 @@ namespace Ascendant.Graphics {
       GL.Uniform4(baseColorUnif, 1.0f, 1.0f, 1.0f, 1.0f);
       var Matrix = Matrix4.Identity;
       diamond.Render(ref Matrix, modelToCameraMatrixUnif);
-      floor.Render(ref Matrix, modelToCameraMatrixUnif);
       GL.UseProgram(0);
     }
 
