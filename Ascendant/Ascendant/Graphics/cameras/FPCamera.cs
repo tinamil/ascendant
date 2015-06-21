@@ -40,8 +40,8 @@ namespace Ascendant.Graphics {
     }
 
     public void Rotate(Vector2 newRotation) {
-      TurnY(MathHelper.DegreesToRadians(newRotation.X) * AppConfig.Default.mousespeed);
-      TurnX(MathHelper.DegreesToRadians(-newRotation.Y) * AppConfig.Default.mousespeed);
+      TurnY(MathHelper.DegreesToRadians(-newRotation.X) * AppConfig.Default.mousespeed);
+      TurnX(MathHelper.DegreesToRadians(newRotation.Y) * AppConfig.Default.mousespeed);
       cameraMoved = true;
     }
     public void Move(Vector3 translation) {

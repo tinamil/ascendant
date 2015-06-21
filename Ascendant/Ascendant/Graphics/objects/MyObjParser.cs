@@ -46,8 +46,10 @@ namespace Ascendant.Graphics {
                         if (items.Length < 4)
                             throw new InvalidDataException("Not enough data to complete vertex for " + filename + ", data: " + line);
                         vertices.Add(new Vector3(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3])));
-                        if (items.Length == 8)
-                            colors.Add(new Vector4(float.Parse(items[4]), float.Parse(items[5]), float.Parse(items[6]), float.Parse(items[7])));
+                        if(items.Length == 8)
+                          colors.Add(new Vector4(float.Parse(items[4]), float.Parse(items[5]), float.Parse(items[6]), float.Parse(items[7])));
+                        else
+                          colors.Add(new Vector4(1f, 1f, 1f, 0f));
                         break;
                     case "vt":
                         if (items.Length < 3)
@@ -68,7 +70,7 @@ namespace Ascendant.Graphics {
                             default: throw new InvalidDataException("Face data must be specified in triangles with exactly 3 vertices or quads with 4 vertices in CW rotation, file: " + filename + ", data: " + line);
                         }
                         for (int i = 1; i < items.Length; ++i) {
-                            indices.Add(ushort.Parse(items[i].Split('/')[0]));
+                          indices.Add((ushort)(ushort.Parse(items[i].Split('/')[0]) - 1));
                         }
                         break;
                     default:

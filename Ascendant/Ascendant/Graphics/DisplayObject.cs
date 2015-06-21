@@ -44,10 +44,7 @@ namespace Ascendant.Graphics {
             GL.EnableVertexAttribArray(1);
             GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, 0, 0);
 
-
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferObject);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
             GL.BindVertexArray(0);
 
@@ -57,7 +54,7 @@ namespace Ascendant.Graphics {
             GL.GenBuffers(1, out vertexBufferObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(mesh.vertices.Length * sizeof(float)), mesh.vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(mesh.vertices.Length * Vector3.SizeInBytes), mesh.vertices, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
             GL.GenBuffers(1, out indexBufferObject);
@@ -88,7 +85,7 @@ namespace Ascendant.Graphics {
             GL.UniformMatrix4(modelToCameraMatrixUnif, false, ref ModelToCameraMatrix);
 
             //Draw this
-            GL.DrawElements(PrimitiveType.Triangles, mesh.indices.Length, DrawElementsType.UnsignedShort, 0);
+            GL.DrawElements(mesh.mode, mesh.indices.Length, DrawElementsType.UnsignedShort, 0);
             
             //Draw children
             foreach (DisplayObject child in children) {

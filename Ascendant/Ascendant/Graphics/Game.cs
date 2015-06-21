@@ -35,7 +35,7 @@ namespace Ascendant.Graphics {
       window.FocusedChanged += FocusChange;
       window.Load += GameLoad;
       InitalizeOpenGL();
-      diamond = new DisplayObject(this, Vector3.Zero, Vector3.One, Quaternion.FromAxisAngle(Vector3.UnitY, 0), @"Graphics\objects\mesh\Diamond.obj");
+      diamond = new DisplayObject(this, Vector3.Zero, Vector3.One, Quaternion.FromAxisAngle(Vector3.UnitY, 0), @"Graphics\objects\mesh\FinalBaseMesh.obj");
     }
 
     private void InitalizeOpenGL() {
