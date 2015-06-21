@@ -79,5 +79,17 @@ namespace Ascendant {
                 this["mousespeed"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Graphics\\objects\\mesh\\")]
+        public string meshpath {
+            get {
+                return ((string)(this["meshpath"]));
+            }
+            set {
+                this["meshpath"] = value;
+            }
+        }
     }
 }

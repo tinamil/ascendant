@@ -10,7 +10,7 @@ using Debug = System.Diagnostics.Debug;
 namespace Ascendant.Graphics {
 
   class FirstPersonCamera : ICamera {
-    public Vector3 Position = new Vector3(0, 0, -10);
+    public Vector3 Position = new Vector3(0, 1, -10);
     public Vector3 Rotation = Vector3.Zero;
     public Quaternion Orientation = Quaternion.Identity;
     public Vector3 Up = Vector3.UnitY;

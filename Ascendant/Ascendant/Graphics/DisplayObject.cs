@@ -21,10 +21,10 @@ namespace Ascendant.Graphics {
 
         Game parent;
         List<DisplayObject> children;
-        public DisplayObject(Game par, Vector3 position, Vector3 scale, Quaternion orientation, String filename) {
+        public DisplayObject(Game par, Vector3 position, Vector3 scale, Quaternion orientation, Mesh mesh, List<DisplayObject> children) {
             parent = par;
-            mesh = MyParser.parseMesh(filename);
-            children = new List<DisplayObject>();
+            this.children = children;
+            this.mesh = mesh;
             this.position = position;
             this.scale = scale;
             this.orientation = orientation;

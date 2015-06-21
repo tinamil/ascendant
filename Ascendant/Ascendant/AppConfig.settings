@@ -17,5 +17,8 @@
     <Setting Name="mousespeed" Type="System.Single" Scope="User">
       <Value Profile="(Default)">0.05</Value>
     </Setting>
+    <Setting Name="meshpath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Graphics\objects\mesh\</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

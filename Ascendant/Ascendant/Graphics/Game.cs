@@ -26,7 +26,7 @@ namespace Ascendant.Graphics {
 
     Matrix4 CameraToClipMatrix;
 
-    DisplayObject diamond;
+    DisplayObject floor, diamond;
 
     public Game(Window window) {
       this.window = window;
@@ -35,7 +35,8 @@ namespace Ascendant.Graphics {
       window.FocusedChanged += FocusChange;
       window.Load += GameLoad;
       InitalizeOpenGL();
-      diamond = new DisplayObject(this, Vector3.Zero, Vector3.One, Quaternion.FromAxisAngle(Vector3.UnitY, 0), @"Graphics\objects\mesh\FinalBaseMesh.obj");
+      floor = MyParser.parse(this, "Floor.obj");
+      diamond = MyParser.parse(this, "Diamond.obj");
     }
 
     private void InitalizeOpenGL() {
@@ -92,6 +93,7 @@ namespace Ascendant.Graphics {
       //Set the base color for all objects.
       GL.Uniform4(baseColorUnif, 1.0f, 1.0f, 1.0f, 1.0f);
       var Matrix = Matrix4.Identity;
+      floor.Render(ref Matrix, modelToCameraMatrixUnif);
       diamond.Render(ref Matrix, modelToCameraMatrixUnif);
       GL.UseProgram(0);
     }
