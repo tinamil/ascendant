@@ -67,7 +67,7 @@
   <ItemGroup>
     <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Documents\OpenTK\1.1\Binaries\OpenTK\Release\OpenTK.dll</HintPath>
+      <HintPath>..\..\..\..\Documents\OpenTK\1.1\Binaries\OpenTK\Debug\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -81,12 +81,14 @@
   <ItemGroup>
     <Compile Include="AppConfig.cs" />
     <Compile Include="Graphics\cameras\FPCamera.cs" />
+    <Compile Include="Graphics\objects\Lighting.cs" />
     <Compile Include="Graphics\objects\MyObjParser.cs" />
-    <Compile Include="Graphics\DisplayObject.cs" />
+    <Compile Include="Graphics\objects\DisplayObject.cs" />
     <Compile Include="Graphics\Game.cs" />
     <Compile Include="Graphics\Framework.cs" />
     <Compile Include="Graphics\cameras\ICamera.cs" />
     <Compile Include="Graphics\Window.cs" />
+    <Compile Include="Physics\Simulation.cs" />
     <Compile Include="Physics\Constants.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -99,6 +101,12 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Ascendant_TemporaryKey.pfx" />
+    <None Include="Graphics\objects\base\Floor.base">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\base\Diamond.base">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Graphics\objects\mesh\Floor.obj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -109,6 +117,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Graphics\shaders\ColorMultUniform.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\shaders\DiffuseSpecularMtlGamma.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\shaders\PN.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Graphics\shaders\PosColorLocalTransform.vert">
@@ -143,6 +157,17 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Graphics\objects\material\Diamond.mtl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="Graphics\objects\lighting\Diamond.light">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

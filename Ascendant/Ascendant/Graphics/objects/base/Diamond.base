@@ -1,0 +1,13 @@
+﻿mesh Diamond.obj
+
+scale 1 1 1
+position 0 2 0
+orientation 0 1 0 0
+size 5 #in meters, forming a cube
+mass 5 #kg
+momentum 0 0 0
+angularMomentum 0 0 0
+
+mtl Diamond.mtl diamond
+
+light Diamond.light

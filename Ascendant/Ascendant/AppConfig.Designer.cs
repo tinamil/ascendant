@@ -82,13 +82,13 @@ namespace Ascendant {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Graphics\\objects\\mesh\\")]
-        public string meshpath {
+        [global::System.Configuration.DefaultSettingValueAttribute("Graphics\\objects\\")]
+        public string itempath {
             get {
-                return ((string)(this["meshpath"]));
+                return ((string)(this["itempath"]));
             }
             set {
-                this["meshpath"] = value;
+                this["itempath"] = value;
             }
         }
     }
