@@ -39,6 +39,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -88,6 +89,7 @@
     <Compile Include="Graphics\Framework.cs" />
     <Compile Include="Graphics\cameras\ICamera.cs" />
     <Compile Include="Graphics\Window.cs" />
+    <Compile Include="Physics\Collision.cs" />
     <Compile Include="Physics\Simulation.cs" />
     <Compile Include="Physics\Constants.cs" />
     <Compile Include="Program.cs" />
@@ -101,12 +103,25 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Ascendant_TemporaryKey.pfx" />
-    <None Include="Graphics\objects\base\Floor.base">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Graphics\objects\base\Diamond.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Graphics\objects\base\Cube.base">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\base\Floor.base">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\base\Man.base">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\material\Cube.mtl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\mesh\Cube.obj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\mesh\FinalBaseMeshAssImpt.obj.mtl" />
     <None Include="Graphics\objects\mesh\Floor.obj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -165,7 +180,7 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <None Include="Graphics\objects\lighting\Diamond.light">
+    <None Include="Graphics\objects\lighting\Cube.light">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

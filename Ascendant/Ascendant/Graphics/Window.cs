@@ -16,6 +16,9 @@ namespace Ascendant.Graphics {
 
         Game game;
 
+        public const int g_materialBlockIndex = 0;
+        public const int g_lightBlockIndex = 1;
+
         internal float GammaValue = 2.2f;
         internal Physics.Simulation sim;
 
@@ -32,7 +35,7 @@ namespace Ascendant.Graphics {
 
 
         protected void RenderWindow(object sender, FrameEventArgs e) {
-            Vector4 bkg = Lighting.GammaCorrect(game.Lights.GetBackgroundColor(), GammaValue);
+            Vector4 bkg = Lighting.GammaCorrect(new Vector4(0f, 0f, 0f, 1.0f), GammaValue);
 
             GL.ClearColor(bkg[0], bkg[1], bkg[2], bkg[3]);
             GL.ClearDepth(1.0f);

@@ -10,30 +10,25 @@ namespace Ascendant.Graphics {
     class DisplayObject {
         Mesh mesh;
         int matNumber;
-        Vector3 scale;
 
-        Physics.PhysicsObject physics;
+        internal Physics.PhysicsObject physics { get; private set; }
 
-        internal Vector3 lightPosition { get; private set; }
         internal Vector4 lightIntensity { get; private set; }
 
         uint vertexBufferObject;
-        uint indexBufferObject;
         uint vertexNormalObject;
 
         uint vertexArrayObject;
 
         Game parent;
         List<DisplayObject> children;
-        public DisplayObject(Game par, Vector3 scale, Physics.PhysicsObject physObj, Mesh mesh, int matNumber, PerLight light, List<DisplayObject> children) {
+        public DisplayObject(Game par, Physics.PhysicsObject physObj, Mesh mesh, int matNumber, PerLight light, List<DisplayObject> children) {
             parent = par;
             this.children = children;
             this.mesh = mesh;
             this.matNumber = matNumber;
-            this.scale = scale;
             this.physics = physObj;
             this.lightIntensity = light.lightIntensity;
-            this.lightPosition = light.cameraSpaceLightPos.Xyz;
             LoadBuffers();
             LoadVertexArray();
         }
@@ -48,9 +43,7 @@ namespace Ascendant.Graphics {
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexNormalObject);
             GL.EnableVertexAttribArray(1);
-            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 0, 0);
-
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferObject);
+            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, true, 0, 0);
 
             GL.BindVertexArray(0);
 
@@ -68,38 +61,34 @@ namespace Ascendant.Graphics {
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexNormalObject);
             GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(mesh.normals.Length * Vector3.SizeInBytes), mesh.normals, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-
-            GL.GenBuffers(1, out indexBufferObject);
-
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(mesh.indices.Length * sizeof(ushort)), mesh.indices, BufferUsageHint.StaticDraw);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
         }
 
         internal void Render(ref Matrix4 parentMatrix, int modelToCameraMatrixUnif, int normalModelToCameraMatrixUnif) {
             GL.BindVertexArray(vertexArrayObject);
 
             //Translate
-            Matrix4 ModelToWorldMatrix = parentMatrix * Matrix4.CreateTranslation(physics.current.position);
+            Matrix4 ModelToWorldMatrix = parentMatrix * Matrix4.CreateTranslation(physics.display.position);
             //Rotate
-            ModelToWorldMatrix = ModelToWorldMatrix * Matrix4.CreateFromQuaternion(physics.current.orientation);
+            ModelToWorldMatrix = ModelToWorldMatrix * Matrix4.CreateFromQuaternion(physics.display.orientation);
             //Scale
-            ModelToWorldMatrix = ModelToWorldMatrix * Matrix4.CreateScale(scale);
+            ModelToWorldMatrix = ModelToWorldMatrix * Matrix4.CreateScale(physics.display.scale);
 
             Matrix4 ModelToCameraMatrix = ModelToWorldMatrix * parent.Camera.GetWorldToCameraMatrix();
             GL.UniformMatrix4(modelToCameraMatrixUnif, false, ref ModelToCameraMatrix);
-            Matrix3 NormalModelToCameraMatrix = new Matrix3(ModelToCameraMatrix.Inverted());
-            GL.UniformMatrix3(normalModelToCameraMatrixUnif, true, ref NormalModelToCameraMatrix);
+            Matrix3 NormalModelToCameraMatrix = new Matrix3(ModelToCameraMatrix);
+            NormalModelToCameraMatrix.Invert();
+            NormalModelToCameraMatrix.Transpose();
+            GL.UniformMatrix3(normalModelToCameraMatrixUnif, false, ref NormalModelToCameraMatrix);
 
-            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, MyLoader.MaterialLoader.g_materialBlockIndex, MyLoader.MaterialLoader.g_materialUniformBuffer, (IntPtr)(MyLoader.MaterialLoader.m_sizeMaterialBlock * matNumber), (IntPtr)(MyLoader.MaterialLoader.m_sizeMaterialBlock));
+            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, Window.g_materialBlockIndex, MyLoader.MaterialLoader.g_materialUniformBuffer, (IntPtr)(MyLoader.MaterialLoader.m_sizeMaterialBlock * matNumber), (IntPtr)(MyLoader.MaterialLoader.m_sizeMaterialBlock));
 
             //Draw this
-            GL.DrawElements(mesh.mode, mesh.indices.Length, DrawElementsType.UnsignedShort, 0);
+            GL.DrawArrays(mesh.mode, 0, mesh.vertices.Length);
 
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, MyLoader.MaterialLoader.g_materialBlockIndex, 0);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, Window.g_materialBlockIndex, 0);
             //Draw children
             foreach (DisplayObject child in children) {
-                child.Render(ref ModelToCameraMatrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);
+                child.Render(ref ModelToWorldMatrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);
             }
 
             GL.BindVertexArray(0);

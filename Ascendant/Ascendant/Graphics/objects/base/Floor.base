@@ -1,7 +1,7 @@
 ﻿mesh Floor.obj
 
-scale 10 10 10
-position 0 -1 0
+scale 1 1 1
+position 0 -.5 0
 orientation 0 1 0 0 #x y z axes, angle of rotation
 size 5 #in meters, forming a cube
 mass 5 #kg

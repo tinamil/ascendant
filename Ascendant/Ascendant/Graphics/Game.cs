@@ -25,7 +25,7 @@ namespace Ascendant.Graphics {
 
         Matrix4 CameraToClipMatrix;
 
-        DisplayObject floor, diamond;
+        DisplayObject floor, man, cube, diamond;
        
         public Game(Window window) {
             this.window = window;
@@ -35,7 +35,10 @@ namespace Ascendant.Graphics {
             window.Load += GameLoad;
             InitalizeOpenGL();
             floor = MyParser.parseObject(this, "Floor.base");
+            man = MyParser.parseObject(this, "Man.base");
+            cube = MyParser.parseObject(this, "Cube.base");
             diamond = MyParser.parseObject(this, "Diamond.base");
+            
             Ascendant.Graphics.MyLoader.MaterialLoader.LoadMaterialBufferBlock(gameProgram);
         }
         
@@ -55,7 +58,6 @@ namespace Ascendant.Graphics {
 
 
        protected void Keyboard_KeyDown(object sender, KeyboardKeyEventArgs e) {
-            Debug.WriteLine("Key down: " + e.Key);
             Vector3 movement = Vector3.Zero;
             if (e.Keyboard.IsKeyDown(Key.Escape))
                 window.Exit();
@@ -91,7 +93,9 @@ namespace Ascendant.Graphics {
             var Matrix = Matrix4.Identity;
 
             Lights.Render(Camera.GetWorldToCameraMatrix(), window.GammaValue);
+            cube.Render(ref Matrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);
             floor.Render(ref Matrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);
+            man.Render(ref Matrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);
             diamond.Render(ref Matrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);
             GL.UseProgram(0);
         }
@@ -107,7 +111,6 @@ namespace Ascendant.Graphics {
             var current = Mouse.GetState();
             if (current != previous && window.Focused) {
                 Vector2 delta = new Vector2(current.X - previous.X, current.Y - previous.Y);
-                Debug.WriteLine("Mouse deltas: " + delta.ToString());
                 Camera.Rotate(delta);
                 ResetCursor();
             }

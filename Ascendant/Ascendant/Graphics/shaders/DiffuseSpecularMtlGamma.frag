@@ -80,7 +80,7 @@ void main()
 	for(int light = 0; light < numberOfLights; light++){
 		accumLighting += ComputeLighting(Lgt.lights[light]);
 	}
-	accumLighting = accumLighting / Lgt.attenuationMaxGamma.y;
+	accumLighting = accumLighting / Lgt.attenuationMaxGamma.y; 
 	vec4 gamma = vec4(Lgt.attenuationMaxGamma.z);
 	gamma.w = 1.0;
 	outputColor = pow(accumLighting, gamma);

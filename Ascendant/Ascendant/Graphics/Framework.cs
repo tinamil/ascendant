@@ -7,9 +7,11 @@ using System.IO;
 using System.Diagnostics;
 using OpenTK;
 using Ascendant.Graphics.lighting;
+using System.Runtime.InteropServices;
 
 namespace Ascendant.Graphics {
-    class Framework {
+    static class Framework {
+
         public static int LoadShader(ShaderType eShaderType, string strShaderFilename) {
             if (!File.Exists(strShaderFilename)) {
                 Debug.WriteLine("Could not find the file " + strShaderFilename, "Error");
