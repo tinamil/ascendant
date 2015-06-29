@@ -10,8 +10,8 @@ using Ascendant.Graphics;
 namespace Ascendant.Physics {
 
     class Simulation {
+
         List<PhysicsObject> objects = new List<PhysicsObject>();
-        BoundingVolumeTree bvt;
         public void AddObject(PhysicsObject obj) {
             objects.Add(obj);
         }
@@ -30,11 +30,11 @@ namespace Ascendant.Physics {
             prevTime = newTime;
             accumulator += frameTime;
             while (accumulator >= dt) {
-                AxisAlignedBoundingBox[] allObjects = new AxisAlignedBoundingBox[objects.Count];
-                for (int i = 0; i < allObjects.Length; ++i) {
-                    allObjects[i] = objects[i].getBounds();
+                var allVertices = new List<AABB>();
+                 for (int i = 0; i < objects.Count; ++i) {
+                     allVertices.Add(objects[i].getBounds());
                 }
-                bvt = new BoundingVolumeTree(allObjects);
+                BoundingVolumeTree bvt = new BoundingVolumeTree(allVertices);
                 foreach (PhysicsObject obj in objects) {
                     obj.update(t, dt, bvt);
                 }
@@ -53,14 +53,15 @@ namespace Ascendant.Physics {
         internal State display;
         private State current;
         private State previous;
-        internal AxisAlignedBoundingBox getBounds() {
+
+        internal AABB getBounds() {
             return current.orientedBound;
         }
 
         /// Update physics state.
         internal void update(float t, float dt, BoundingVolumeTree bvt) {
             previous = current;
-            current.bvt = bvt;
+            //TODO collisions from BVT
             Derivative.integrate(ref current, t, dt);
         }
 
@@ -69,7 +70,7 @@ namespace Ascendant.Physics {
         }
 
         internal PhysicsObject(float size, float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale, Vector3 angularMomentum, Mesh mesh) {
-            previous = current = new State(size, mass, position, momentum, orientation, scale, angularMomentum, mesh);
+            display = previous = current = new State(size, mass, position, momentum, orientation, scale, angularMomentum, mesh);
         }
 
         /// Physics state.
@@ -92,9 +93,9 @@ namespace Ascendant.Physics {
             internal float inverseMass;              // inverse of the mass used to convert momentum to velocity.
             internal float inertiaTensor;            // inertia tensor of the cube (i have simplified it to a single value due to the mass properties a cube).
             internal float inverseInertiaTensor;     // inverse inertia tensor used to convert angular momentum to angular velocity.
-            internal AxisAlignedBoundingBox originalBound; // Original AABB created from mesh
-            internal AxisAlignedBoundingBox orientedBound; //Cached rotated AABB
-            internal BoundingVolumeTree bvt;           //Reference to the Bounding Volume Tree
+            internal AABB originalBound; // Original AABB created from mesh
+            internal AABB orientedBound; //Cached rotated AABB
+            internal Mesh mesh;
 
             internal static State Lerp(State previous, State current, float blend) {
                 State retVal = new State();
@@ -102,16 +103,18 @@ namespace Ascendant.Physics {
                 retVal.orientation = Quaternion.Slerp(previous.orientation, current.orientation, blend);
                 retVal.momentum = Vector3.Lerp(previous.momentum, current.momentum, blend);
                 retVal.angularMomentum = Vector3.Lerp(previous.angularMomentum, current.angularMomentum, blend);
+                retVal.scale = current.scale;
+                retVal.mesh = current.mesh;
                 return retVal;
             }
             /// Recalculate secondary state values from primary values.
 
-            internal void recalculate() {
+            internal void recalculate(bool updateBoundingBox) {
                 velocity = momentum * inverseMass;
                 angularVelocity = angularMomentum * inverseInertiaTensor;
                 orientation.Normalize();
                 spin = Quaternion.Multiply(new Quaternion(angularVelocity.X, angularVelocity.Y, angularVelocity.Z, 0), 0.5f) * orientation;
-                AxisAlignedBoundingBox.Update(originalBound, orientation, position, scale, out orientedBound);
+                if (updateBoundingBox) AABB.Update(originalBound, orientation, position, scale, out orientedBound);
             }
 
 
@@ -127,9 +130,10 @@ namespace Ascendant.Physics {
                 this.angularMomentum = angularMomentum;
                 this.inertiaTensor = mass * size * size * 1.0f / 6.0f;
                 this.inverseInertiaTensor = 1.0f / inertiaTensor;
-                this.originalBound = new AxisAlignedBoundingBox(mesh.vertices);
+                this.originalBound = AABB.FromVertices(mesh.vertices);
                 this.scale = scale;
-                recalculate();
+                this.mesh = mesh;
+                recalculate(true);
             }
         };
 
@@ -156,7 +160,7 @@ namespace Ascendant.Physics {
                 state.momentum += derivative.force * dt;
                 state.orientation += derivative.spin * dt;
                 state.angularMomentum += derivative.torque * dt;
-                state.recalculate();
+                state.recalculate(false);
 
                 Derivative output;
                 output.velocity = state.velocity;
@@ -178,7 +182,7 @@ namespace Ascendant.Physics {
                 state.orientation += 1.0f / 6.0f * dt * (a.spin + 2.0f * (b.spin + c.spin) + d.spin);
                 state.angularMomentum += 1.0f / 6.0f * dt * (a.torque + 2.0f * (b.torque + c.torque) + d.torque);
 
-                state.recalculate();
+                state.recalculate(true);
             }
 
             /// Calculate force and torque for physics state at time t.
@@ -189,20 +193,20 @@ namespace Ascendant.Physics {
             /// timestep so we need our force values to supply the curvature.
 
             static void forces(State state, float t, out Vector3 force, out Vector3 torque) {
-
-                collisionDetection(state, out force, out torque);
+                torque = force = Vector3.Zero;
+                //collisionDetection(state, ref force, ref torque);
                 //gravity(ref force);
                 //damping(state, ref force, ref torque);
                 //control(input, state, force, torque);
             }
 
-            private static void collisionDetection(State state, out Vector3 force, out Vector3 torque) {
+            private static void collisionDetection(State state, ref Vector3 force, ref Vector3 torque) {
                 force = Vector3.Zero;
                 torque = Vector3.Zero;
-                AxisAlignedBoundingBox[] collisionTargets = state.bvt.getCollisions(state.orientedBound);
-                if (collisionTargets.Length > 0) {
-                    Debug.WriteLine("Collisions: " + collisionTargets.Length);
-                }
+                //AxisAlignedBoundingBox[] collisionTargets = state.bvt.getCollisions(state.orientedBound);
+                //if (collisionTargets.Length > 0) {
+                // Debug.WriteLine("Collisions: " + collisionTargets.Length);
+                // }
             }
 
             /// Calculate gravity force.

@@ -11,13 +11,11 @@ using System.Diagnostics;
 
 namespace Ascendant.Graphics {
     public class Mesh {
-        public PrimitiveType mode { get; private set; }
         public Vector3[] vertices { get; private set; }
         public Vector2[] texCoords { get; private set; }
         public Vector3[] normals { get; private set; }
 
-        public Mesh(Vector3[] _v, Vector2[] _t, Vector3[] _n, PrimitiveType _m) {
-            mode = _m;
+        public Mesh(Vector3[] _v, Vector2[] _t, Vector3[] _n) {
             vertices = _v;
             texCoords = _t;
             normals = _n;
@@ -136,7 +134,7 @@ namespace Ascendant.Graphics {
             }
             Physics.PhysicsObject physObj = new Physics.PhysicsObject(size, mass, position, momentum, orientation, scale, angularMomentum, mesh);
             game.window.sim.AddObject(physObj);
-            DisplayObject retVal = MyLoader.loadDisplayObject(game, scale, physObj, mesh, mat, perLight, children);
+            DisplayObject retVal = MyLoader.loadDisplayObject(game, physObj, mat, perLight, children);
             if (perLight.lightIntensity != Vector4.Zero) game.Lights.AddPointLight(retVal);
             return retVal;
         }
@@ -234,9 +232,9 @@ namespace Ascendant.Graphics {
                 var vertices = new List<Vector3>();
                 var texCoords = new List<Vector2>();
                 var normals = new List<Vector3>();
-                var vindices = new List<ushort>();
-                var nindices = new List<ushort>();
-                var tindices = new List<ushort>();
+                var vindices = new List<int>();
+                var nindices = new List<int>();
+                var tindices = new List<int>();
                 bool backwards = false;
                 PrimitiveType type = PrimitiveType.Triangles;
                 while ((line = reader.ReadLine()) != null) {
@@ -304,19 +302,46 @@ namespace Ascendant.Graphics {
                 var indexVertices = new List<Vector3>();
                 var indexTexCoords = new List<Vector2>();
                 var indexNormals = new List<Vector3>();
-                foreach (ushort u in vindices) {
-                    indexVertices.Add(vertices[u]);
+                if (type == PrimitiveType.Triangles) {
+                    foreach (int u in vindices) {
+                        indexVertices.Add(vertices[u]);
+                    }
+                    foreach (int u in tindices) {
+                        //indexTexCoords.Add(texCoords[u]);
+                    }
+                    foreach (int u in nindices) {
+                        indexNormals.Add(normals[u]);
+                    }
+                } else if (type == PrimitiveType.Quads) {
+                    indexVertices = convertToTriangles(vindices, vertices);
+                    indexNormals = convertToTriangles(nindices, normals);
+                    //indexTexCoords
+                } else {
+                    throw new InvalidDataException("Mesh type was not triangles or quads");
                 }
-                foreach (ushort u in tindices) {
-                    //indexTexCoords.Add(texCoords[u]);
-                }
-                foreach (ushort u in nindices) {
-                    indexNormals.Add(normals[u]);
-                }
-                mesh = new Mesh(indexVertices.ToArray(), indexTexCoords.ToArray(), indexNormals.ToArray(), type);
+               
+                mesh = new Mesh(indexVertices.ToArray(), indexTexCoords.ToArray(), indexNormals.ToArray());
                 meshMap.Add(key, mesh);
             }
             return mesh;
+        }
+
+        private static List<Vector3> convertToTriangles(List<int> vindices, List<Vector3> vertices) {
+            var indexVertices = new List<Vector3>();
+            Vector3[] quad = new Vector3[4];
+            for (int i = 0; i < vindices.Count; ++i) {
+                if (i % 4 == 0 && i > 0) {
+                    indexVertices.Add(quad[0]);
+                    indexVertices.Add(quad[1]);
+                    indexVertices.Add(quad[2]);
+
+                    indexVertices.Add(quad[2]);
+                    indexVertices.Add(quad[3]);
+                    indexVertices.Add(quad[0]);
+                }
+                quad[i % 4] = vertices[vindices[i]];
+            }
+            return indexVertices;
         }
     }
     class MyLoader {
@@ -368,9 +393,9 @@ namespace Ascendant.Graphics {
         }
 
 
-        static internal DisplayObject loadDisplayObject(Game game, OpenTK.Vector3 scale, Physics.PhysicsObject physObj, Mesh mesh, Material mat, PerLight light, List<DisplayObject> children) {
+        static internal DisplayObject loadDisplayObject(Game game, Physics.PhysicsObject physObj, Material mat, PerLight light, List<DisplayObject> children) {
             int matIndex = MaterialLoader.AddMaterial(mat);
-            return new DisplayObject(game, physObj, mesh, matIndex, light, children);
+            return new DisplayObject(game, physObj, matIndex, light, children);
         }
 
     }

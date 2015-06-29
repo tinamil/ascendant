@@ -84,6 +84,7 @@ namespace Ascendant.Graphics {
 
         public void Update(object o, EventArgs e) {
             MouseMove();
+            Debug.WriteLine("Render frequency: " + window.RenderFrequency);
             window.sim.RunSim(timer.ElapsedMilliseconds);
         }
 
@@ -91,7 +92,6 @@ namespace Ascendant.Graphics {
             GL.UseProgram(gameProgram);
 
             var Matrix = Matrix4.Identity;
-
             Lights.Render(Camera.GetWorldToCameraMatrix(), window.GammaValue);
             cube.Render(ref Matrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);
             floor.Render(ref Matrix, modelToCameraMatrixUnif, normalModelToCameraMatrixUnif);

@@ -59,69 +59,87 @@ namespace Ascendant.Graphics {
 
             return program;
         }
-        public class WeightedLinearInterpolator {
 
-            protected List<Data> m_values = new List<Data>();
-            int NumSegments() { return m_values.Count == 0 ? 0 : m_values.Count() - 1; }
+    }
 
-            public Vector4 Interpolate(float fAlpha) {
-                if (m_values.Count == 0)
-                    return new Vector4();
-                if (m_values.Count == 1)
-                    return m_values[0].data;
+    public class WeightedLinearInterpolator {
 
-                //Find which segment we are within.
-                int segment = 1;
-                for (; segment < m_values.Count; ++segment) {
-                    if (fAlpha < m_values[segment].weight)
-                        break;
-                }
+        protected List<Data> m_values = new List<Data>();
+        int NumSegments() { return m_values.Count == 0 ? 0 : m_values.Count() - 1; }
 
-                if (segment == m_values.Count)
-                    return m_values.Last().data;
+        public Vector4 Interpolate(float fAlpha) {
+            if (m_values.Count == 0)
+                return new Vector4();
+            if (m_values.Count == 1)
+                return m_values[0].data;
 
-                float sectionAlpha = fAlpha - m_values[segment - 1].weight;
-                sectionAlpha /= m_values[segment].weight - m_values[segment - 1].weight;
-
-                float invSecAlpha = 1.0f - sectionAlpha;
-
-                return m_values[segment - 1].data * invSecAlpha + m_values[segment].data * sectionAlpha;
+            //Find which segment we are within.
+            int segment = 1;
+            for (; segment < m_values.Count; ++segment) {
+                if (fAlpha < m_values[segment].weight)
+                    break;
             }
 
-            protected WeightedLinearInterpolator() { }
+            if (segment == m_values.Count)
+                return m_values.Last().data;
 
-            protected struct Data {
-                public Vector4 data;
-                public float weight;
-            };
+            float sectionAlpha = fAlpha - m_values[segment - 1].weight;
+            sectionAlpha /= m_values[segment].weight - m_values[segment - 1].weight;
 
+            float invSecAlpha = 1.0f - sectionAlpha;
+
+            return m_values[segment - 1].data * invSecAlpha + m_values[segment].data * sectionAlpha;
         }
-        public class TimedLinearInterpolator : WeightedLinearInterpolator {
 
-            public void SetValues(Lighting.LightVector data, bool isLooping = true) {
-                m_values.Clear();
+        protected WeightedLinearInterpolator() { }
 
-                for (int i = 0; i < data.data.Count; ++i) {
-                    Data currData = new Data();
-                    currData.data = data.data[i].data.Item1;
-                    currData.weight = data.data[i].data.Item2;
+        protected struct Data {
+            public Vector4 data;
+            public float weight;
+        };
 
-                    m_values.Add(currData);
-                }
+    }
+    public class TimedLinearInterpolator : WeightedLinearInterpolator {
 
-                if (isLooping && m_values.Count != 0)
-                    m_values.Add(m_values.First());
+        internal void SetValues(Lighting.LightVector data, bool isLooping = true) {
+            m_values.Clear();
 
-                //Ensure first is weight 0, and last is weight 1.
-                if (m_values.Count > 0) {
-                    Data v = m_values[0];
-                    v.weight = 0f;
-                    m_values[0] = v;
-                    v = m_values[m_values.Count - 1];
-                    v.weight = 1f;
-                    m_values[m_values.Count - 1] = v;
-                }
+            for (int i = 0; i < data.data.Count; ++i) {
+                Data currData = new Data();
+                currData.data = data.data[i].data.Item1;
+                currData.weight = data.data[i].data.Item2;
+
+                m_values.Add(currData);
+            }
+
+            if (isLooping && m_values.Count != 0)
+                m_values.Add(m_values.First());
+
+            //Ensure first is weight 0, and last is weight 1.
+            if (m_values.Count > 0) {
+                Data v = m_values[0];
+                v.weight = 0f;
+                m_values[0] = v;
+                v = m_values[m_values.Count - 1];
+                v.weight = 1f;
+                m_values[m_values.Count - 1] = v;
             }
         }
     }
+    class TreeNode<DATA> {
+
+        public TreeNode<DATA> leftChild;
+        public TreeNode<DATA> rightChild;
+
+        public readonly DATA data;
+
+        public TreeNode(DATA data) {
+            this.data = data;
+        }
+
+        public bool isLeaf {
+            get { return leftChild == null && rightChild == null; }
+        }
+    }
+
 }

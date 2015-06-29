@@ -30,7 +30,7 @@ namespace Ascendant {
         // Loop until worker thread activates.
         //while (!workerThread.IsAlive) ;
 
-        window.Run();
+        window.Run(120);
 
       }
     }
