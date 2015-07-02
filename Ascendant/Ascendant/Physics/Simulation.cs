@@ -6,15 +6,23 @@ using System.Diagnostics;
 using System.Threading;
 using OpenTK;
 using Ascendant.Graphics;
+using OpenTK.Graphics.OpenGL4;
+using MIConvexHull;
 
 namespace Ascendant.Physics {
 
     class Simulation {
 
-        List<PhysicsObject> objects = new List<PhysicsObject>();
-        public void AddObject(PhysicsObject obj) {
-            objects.Add(obj);
+        readonly protected List<MovableObject> objects;
+
+        SortSweep broadCollisionTest;
+        //BoundingVolumeTree bvt;
+
+        public Simulation(List<MovableObject> worldObjects) {
+            this.objects = worldObjects;
+            broadCollisionTest = new SortSweep(objects);
         }
+
 
         // This method will be called when the thread is started.
         float t = 0.0f;
@@ -30,205 +38,47 @@ namespace Ascendant.Physics {
             prevTime = newTime;
             accumulator += frameTime;
             while (accumulator >= dt) {
-                var allVertices = new List<AABB>();
-                 for (int i = 0; i < objects.Count; ++i) {
-                     allVertices.Add(objects[i].getBounds());
+                var collisions = broadCollisionTest.SortAndSweepAABBArray();
+                for (int i = 0; i < objects.Count; ++i) {
+                    var obj = objects[i];
+                    List<MovableObject> collideList;
+                    if (collisions.TryGetValue(objects[i], out collideList)) {
+                        for (int j = 0; j < collideList.Count; ++j) {
+                            var box = collideList[j];
+                            CollisionResponse.collision(ref obj, ref box, Vector3.UnitY, Vector3.Zero);
+                        }
+                    }
                 }
-                BoundingVolumeTree bvt = new BoundingVolumeTree(allVertices);
-                foreach (PhysicsObject obj in objects) {
-                    obj.update(t, dt, bvt);
+                for (int i = 0; i < objects.Count; ++i) {
+                    objects[i].update(t, dt);
                 }
                 t += dt;
                 accumulator -= dt;
             }
             float alpha = (float)(accumulator / dt);
             //Interpolate
-            foreach (PhysicsObject obj in objects) {
+            foreach (MovableObject obj in objects) {
                 obj.lerp(alpha);
             }
         }
 
-    }
-    class PhysicsObject {
-        internal State display;
-        private State current;
-        private State previous;
-
-        internal AABB getBounds() {
-            return current.orientedBound;
+        internal void setupBVH() {
+            //var list = new List<Primitive>();
+            //foreach (PhysicsObject obj in objects) {
+            //    Mesh mesh = obj.current.mesh;
+            //    int primitiveSize = mesh.type == PrimitiveType.Triangles ? 3 : 4;
+            //    Primitive[] primitives = new Primitive[mesh.vertices.Length / primitiveSize];
+            //    for (int pIndex = 0; pIndex < primitives.Length; ++pIndex) {
+            //        primitives[pIndex] = new Primitive(mesh, pIndex * primitiveSize);
+            //    }
+            //    list.AddRange(primitives);
+            //}
+            //bvt = new BoundingVolumeTree(list.ToArray());
         }
 
-        /// Update physics state.
-        internal void update(float t, float dt, BoundingVolumeTree bvt) {
-            previous = current;
-            //TODO collisions from BVT
-            Derivative.integrate(ref current, t, dt);
-        }
-
-        internal void lerp(float blend) {
-            display = State.Lerp(previous, current, blend);
-        }
-
-        internal PhysicsObject(float size, float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale, Vector3 angularMomentum, Mesh mesh) {
-            display = previous = current = new State(size, mass, position, momentum, orientation, scale, angularMomentum, mesh);
-        }
-
-        /// Physics state.
-        public struct State {
-            /// primary physics state
-
-            public Vector3 position { get; internal set; }                // the position of the center of mass in world coordinates (meters).
-            internal Vector3 momentum;                // the momentum of the cube in kilogram meters per second.
-            public Quaternion orientation { get; internal set; }        // the orientation of the cube represented by a unit quaternion.
-            internal Vector3 angularMomentum;         // angular momentum vector.
-            internal Vector3 scale;
-
-            // secondary state
-            internal Vector3 velocity;                // velocity in meters per second (calculated from momentum).
-            internal Quaternion spin;                // quaternion rate of change in orientation.
-            internal Vector3 angularVelocity;         // angular velocity (calculated from angularMomentum).
-
-            /// constant state
-            internal float mass;                     // mass of the cube in kilograms.
-            internal float inverseMass;              // inverse of the mass used to convert momentum to velocity.
-            internal float inertiaTensor;            // inertia tensor of the cube (i have simplified it to a single value due to the mass properties a cube).
-            internal float inverseInertiaTensor;     // inverse inertia tensor used to convert angular momentum to angular velocity.
-            internal AABB originalBound; // Original AABB created from mesh
-            internal AABB orientedBound; //Cached rotated AABB
-            internal Mesh mesh;
-
-            internal static State Lerp(State previous, State current, float blend) {
-                State retVal = new State();
-                retVal.position = Vector3.Lerp(previous.position, current.position, blend);
-                retVal.orientation = Quaternion.Slerp(previous.orientation, current.orientation, blend);
-                retVal.momentum = Vector3.Lerp(previous.momentum, current.momentum, blend);
-                retVal.angularMomentum = Vector3.Lerp(previous.angularMomentum, current.angularMomentum, blend);
-                retVal.scale = current.scale;
-                retVal.mesh = current.mesh;
-                return retVal;
-            }
-            /// Recalculate secondary state values from primary values.
-
-            internal void recalculate(bool updateBoundingBox) {
-                velocity = momentum * inverseMass;
-                angularVelocity = angularMomentum * inverseInertiaTensor;
-                orientation.Normalize();
-                spin = Quaternion.Multiply(new Quaternion(angularVelocity.X, angularVelocity.Y, angularVelocity.Z, 0), 0.5f) * orientation;
-                if (updateBoundingBox) AABB.Update(originalBound, orientation, position, scale, out orientedBound);
-            }
-
-
-            /// Default constructor.
-
-            internal State(float size, float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale, Vector3 angularMomentum, Mesh mesh)
-                : this() {
-                this.mass = mass;
-                this.inverseMass = 1.0f / mass;
-                this.position = position;
-                this.momentum = momentum;
-                this.orientation = orientation;
-                this.angularMomentum = angularMomentum;
-                this.inertiaTensor = mass * size * size * 1.0f / 6.0f;
-                this.inverseInertiaTensor = 1.0f / inertiaTensor;
-                this.originalBound = AABB.FromVertices(mesh.vertices);
-                this.scale = scale;
-                this.mesh = mesh;
-                recalculate(true);
-            }
-        };
-
-        struct Derivative {
-            Vector3 velocity;                // velocity is the derivative of position.
-            Vector3 force;                   // force in the derivative of momentum.
-            Quaternion spin;                // spin is the derivative of the orientation quaternion.
-            Vector3 torque;                  // torque is the derivative of angular momentum.
-
-            static Derivative evaluate(State state, float t) {
-                Derivative output = new Derivative();
-                output.velocity = state.velocity;
-                output.spin = state.spin;
-                forces(state, t, out output.force, out output.torque);
-                return output;
-            }
-
-            /// Evaluate derivative values for the physics state at future time t+dt 
-            /// using the specified set of derivatives to advance dt seconds from the 
-            /// specified physics state.
-
-            static Derivative evaluate(State state, float t, float dt, ref Derivative derivative) {
-                state.position += derivative.velocity * dt;
-                state.momentum += derivative.force * dt;
-                state.orientation += derivative.spin * dt;
-                state.angularMomentum += derivative.torque * dt;
-                state.recalculate(false);
-
-                Derivative output;
-                output.velocity = state.velocity;
-                output.spin = state.spin;
-                forces(state, t + dt, out output.force, out output.torque);
-                return output;
-            }
-            /// Integrate physics state forward by dt seconds.
-            /// Uses an RK4 integrator to numerically integrate with error O(5).
-
-            internal static void integrate(ref State state, float t, float dt) {
-                Derivative a = evaluate(state, t);
-                Derivative b = evaluate(state, t, dt * 0.5f, ref a);
-                Derivative c = evaluate(state, t, dt * 0.5f, ref b);
-                Derivative d = evaluate(state, t, dt, ref c);
-
-                state.position += 1.0f / 6.0f * dt * (a.velocity + 2.0f * (b.velocity + c.velocity) + d.velocity);
-                state.momentum += 1.0f / 6.0f * dt * (a.force + 2.0f * (b.force + c.force) + d.force);
-                state.orientation += 1.0f / 6.0f * dt * (a.spin + 2.0f * (b.spin + c.spin) + d.spin);
-                state.angularMomentum += 1.0f / 6.0f * dt * (a.torque + 2.0f * (b.torque + c.torque) + d.torque);
-
-                state.recalculate(true);
-            }
-
-            /// Calculate force and torque for physics state at time t.
-            /// Due to the way that the RK4 integrator works we need to calculate
-            /// force implicitly from state rather than explictly applying forces
-            /// to the rigid body once per update. This is because the RK4 achieves
-            /// its accuracy by detecting curvature in derivative values over the 
-            /// timestep so we need our force values to supply the curvature.
-
-            static void forces(State state, float t, out Vector3 force, out Vector3 torque) {
-                torque = force = Vector3.Zero;
-                //collisionDetection(state, ref force, ref torque);
-                //gravity(ref force);
-                //damping(state, ref force, ref torque);
-                //control(input, state, force, torque);
-            }
-
-            private static void collisionDetection(State state, ref Vector3 force, ref Vector3 torque) {
-                force = Vector3.Zero;
-                torque = Vector3.Zero;
-                //AxisAlignedBoundingBox[] collisionTargets = state.bvt.getCollisions(state.orientedBound);
-                //if (collisionTargets.Length > 0) {
-                // Debug.WriteLine("Collisions: " + collisionTargets.Length);
-                // }
-            }
-
-            /// Calculate gravity force.
-            /// @param force the force accumulator.
-            static void gravity(ref Vector3 force) {
-                force.Y -= 9.8f;
-            }
-
-            /// Calculate a simple linear and angular damping force.
-            /// This roughly simulates energy loss due to heat dissipation
-            /// or air resistance or whatever you like.
-            /// @param state the current cube physics state.
-            /// @param force the force accumulator.
-            /// @param torque the torque accumulator.
-
-            static void damping(State state, ref Vector3 force, ref Vector3 torque) {
-                const float linear = 0.001f;
-                const float angular = 0.001f;
-
-                force -= linear * state.velocity;
-                torque -= angular * state.angularVelocity;
-            }
+        internal void testCollisions() {
+            //var collisions = new Dictionary<ComplexAABB, List<ComplexAABB>>();
+            //BoundingVolumeTree.BVHCollision(ref collisions, bvt.root, bvt.root);
         }
     }
 }

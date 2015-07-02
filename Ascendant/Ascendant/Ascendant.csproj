@@ -6,7 +6,7 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{068931D2-7222-4D7E-9AEE-CFE85BE7B24D}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Ascendant</RootNamespace>
     <AssemblyName>Ascendant</AssemblyName>
@@ -87,6 +87,9 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
   </PropertyGroup>
+  <PropertyGroup>
+    <NoWin32Manifest>true</NoWin32Manifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -105,14 +108,39 @@
     <Compile Include="AppConfig.cs" />
     <Compile Include="Graphics\cameras\FPCamera.cs" />
     <Compile Include="Graphics\objects\Lighting.cs" />
+    <Compile Include="Graphics\objects\Material.cs" />
+    <Compile Include="Graphics\objects\Mesh.cs" />
     <Compile Include="Graphics\objects\MyObjParser.cs" />
-    <Compile Include="Graphics\objects\DisplayObject.cs" />
-    <Compile Include="Graphics\Game.cs" />
-    <Compile Include="Graphics\Framework.cs" />
+    <Compile Include="Game.cs" />
+    <Compile Include="Framework.cs" />
     <Compile Include="Graphics\cameras\ICamera.cs" />
-    <Compile Include="Graphics\Window.cs" />
+    <Compile Include="Graphics\objects\World.cs" />
+    <Compile Include="Physics\MIConvexHull\Configuration.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Core.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Data.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Initialize.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Result.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\Collections.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\ConvexFace.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\DataModel.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\MathHelper.cs" />
+    <Compile Include="Physics\MIConvexHull\ConvexHull\ObjectManager.cs" />
+    <Compile Include="Physics\MIConvexHull\IVertex.cs" />
+    <Compile Include="Physics\MIConvexHull\Triangulation.cs" />
+    <Compile Include="Physics\MIConvexHull\Triangulation\DelaunayTrianglationInternal.cs" />
+    <Compile Include="Physics\MIConvexHull\Triangulation\DelaunayTriangulation.cs" />
+    <Compile Include="Physics\MIConvexHull\Triangulation\TriangulationCell.cs" />
+    <Compile Include="Physics\MIConvexHull\Triangulation\VoronoiEdge.cs" />
+    <Compile Include="Physics\MIConvexHull\Triangulation\VoronoiMesh.cs" />
+    <Compile Include="Physics\MovableObject.cs" />
+    <Compile Include="Physics\SortSweep.cs" />
+    <Compile Include="Physics\State.cs" />
+    <Compile Include="Window.cs" />
     <Compile Include="Physics\AABB.cs" />
-    <Compile Include="Physics\Collision.cs" />
+    <Compile Include="Physics\BoundingVolumeTree.cs" />
+    <Compile Include="Physics\CollisionResponse.cs" />
+    <Compile Include="Physics\GJK.cs" />
     <Compile Include="Physics\Simulation.cs" />
     <Compile Include="Physics\Constants.cs" />
     <Compile Include="Program.cs" />
@@ -137,6 +165,9 @@
     <None Include="Graphics\objects\base\Man.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Graphics\objects\material\Skin.mtl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Graphics\objects\material\Cube.mtl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -153,16 +184,10 @@
     <None Include="Graphics\objects\mesh\FinalBaseMesh.obj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Graphics\shaders\ColorMultUniform.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Graphics\shaders\DiffuseSpecularMtlGamma.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Graphics\shaders\PN.vert">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Graphics\shaders\PosColorLocalTransform.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config">
@@ -200,11 +225,18 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Graphics\objects\world\world1.wor">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <ItemGroup>
     <None Include="Graphics\objects\lighting\Cube.light">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Physics\MIConvexHull\MIConvexHull.csproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

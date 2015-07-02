@@ -9,7 +9,7 @@ using OpenTK;
 using Ascendant.Graphics.lighting;
 using System.Runtime.InteropServices;
 
-namespace Ascendant.Graphics {
+namespace Ascendant {
     static class Framework {
 
         public static int LoadShader(ShaderType eShaderType, string strShaderFilename) {
@@ -101,13 +101,13 @@ namespace Ascendant.Graphics {
     }
     public class TimedLinearInterpolator : WeightedLinearInterpolator {
 
-        internal void SetValues(Lighting.LightVector data, bool isLooping = true) {
+        internal void SetValues(Tuple<Vector4, float>[] data, bool isLooping = true) {
             m_values.Clear();
 
-            for (int i = 0; i < data.data.Count; ++i) {
+            for (int i = 0; i < data.Length; ++i) {
                 Data currData = new Data();
-                currData.data = data.data[i].data.Item1;
-                currData.weight = data.data[i].data.Item2;
+                currData.data = data[i].Item1;
+                currData.weight = data[i].Item2;
 
                 m_values.Add(currData);
             }
@@ -128,8 +128,7 @@ namespace Ascendant.Graphics {
     }
     class TreeNode<DATA> {
 
-        public TreeNode<DATA> leftChild;
-        public TreeNode<DATA> rightChild;
+        public readonly List<TreeNode<DATA>> children = new List<TreeNode<DATA>>();
 
         public readonly DATA data;
 
@@ -138,7 +137,7 @@ namespace Ascendant.Graphics {
         }
 
         public bool isLeaf {
-            get { return leftChild == null && rightChild == null; }
+            get { return children.Count == 0; }
         }
     }
 

@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 in vec3 vertexNormal;
 in vec3 cameraSpacePosition;
@@ -14,19 +14,23 @@ uniform Material
 	vec4 specularShininess;
 } Mtl;
 
+const int numberOfLights = 16;
+
 struct PerLight
 {
 	vec4 cameraSpaceLightPos;
 	vec4 lightIntensity;
 };
 
-const int numberOfLights = 16;
+uniform PerLightBlock
+{
+	PerLight PLight[numberOfLights];
+};
 
 uniform Light
 {
 	vec4 ambientIntensity;
 	vec4 attenuationMaxGamma;
-	PerLight lights[numberOfLights];
 } Lgt;
 
 
@@ -78,7 +82,7 @@ void main()
 {
 	vec4 accumLighting = Mtl.diffuseColor * Lgt.ambientIntensity;
 	for(int light = 0; light < numberOfLights; light++){
-		accumLighting += ComputeLighting(Lgt.lights[light]);
+		accumLighting += ComputeLighting(PLight[light]);
 	}
 	accumLighting = accumLighting / Lgt.attenuationMaxGamma.y; 
 	vec4 gamma = vec4(Lgt.attenuationMaxGamma.z);

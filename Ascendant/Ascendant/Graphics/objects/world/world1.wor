@@ -1,0 +1,6 @@
+﻿base Cube.base 
+base Diamond.base 
+base Floor.base 
+base Man.base
+ambient 1 1 1 .1
+background 0.1 0.1 0.1 1

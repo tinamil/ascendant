@@ -18,9 +18,7 @@ namespace Ascendant.Graphics {
 
         public const int g_materialBlockIndex = 0;
         public const int g_lightBlockIndex = 1;
-
-        internal float GammaValue = 2.2f;
-        internal Physics.Simulation sim;
+        public const int g_pointLightBlockIndex = 2;
 
         protected void LoadWindow(object sender, EventArgs e) {
             GL.Enable(EnableCap.CullFace);
@@ -35,7 +33,7 @@ namespace Ascendant.Graphics {
 
 
         protected void RenderWindow(object sender, FrameEventArgs e) {
-            Vector4 bkg = Lighting.GammaCorrect(new Vector4(0f, 0f, 0f, 1.0f), GammaValue);
+            Vector4 bkg = Lighting.GammaCorrect(game.getBackground());
 
             GL.ClearColor(bkg[0], bkg[1], bkg[2], bkg[3]);
             GL.ClearDepth(1.0f);
@@ -56,6 +54,10 @@ namespace Ascendant.Graphics {
         private Window(int width, int height, GraphicsMode graphicsMode, String title, GameWindowFlags windowFlags,
           DisplayDevice displayDevice, int majorVersion, int minorVersion, GraphicsContextFlags graphicsContextFlags)
             : base(width, height, graphicsMode, title, windowFlags, displayDevice, majorVersion, minorVersion, graphicsContextFlags) {
+            initialize();
+        }
+
+        internal Window() {
             initialize();
         }
 
@@ -87,14 +89,6 @@ namespace Ascendant.Graphics {
             //this.WindowStateChanged
         }
 
-        private Window() {
-            initialize();
-        }
-
-        public Window(Physics.Simulation sim) {
-           this.sim = sim;
-           initialize();
-        }
     }
 }
 

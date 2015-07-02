@@ -8,76 +8,59 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Ascendant.Graphics.lighting;
 using System.Diagnostics;
+using Ascendant.Physics;
+using Ascendant.Graphics.objects;
+using MIConvexHull;
 
 namespace Ascendant.Graphics {
-    public class Mesh {
-        public Vector3[] vertices { get; private set; }
-        public Vector2[] texCoords { get; private set; }
-        public Vector3[] normals { get; private set; }
+    static class MyParser {
+        
+        static Dictionary<String, Mesh> meshMap = new Dictionary<String, Mesh>();
 
-        public Mesh(Vector3[] _v, Vector2[] _t, Vector3[] _n) {
-            vertices = _v;
-            texCoords = _t;
-            normals = _n;
-        }
-    }
-    [StructLayout(LayoutKind.Explicit)]
-    struct PerLight {
-        [FieldOffset(0)]
-        internal Vector4 cameraSpaceLightPos;
-        [FieldOffset(16)]
-        internal Vector4 lightIntensity;
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    internal struct LightBlockGamma {
-        [FieldOffset(0)]
-        internal Vector4 ambientIntensity;
-        [FieldOffset(16)]
-        internal Vector4 attenuationMaxGamma;
-        [FieldOffset(32)]
-        internal PerLight[] lights;
-
-        internal static int getByteSize() {
-            return Marshal.SizeOf(typeof(Vector4)) * 2 + Marshal.SizeOf(typeof(PerLight)) * Lighting.numLights;
-        }
-
-        unsafe internal Byte[] getBytes() {
-            int size = getByteSize();
-            IntPtr data = Marshal.AllocHGlobal(size);
-            IntPtr ptr = data;
-            Marshal.StructureToPtr(this.ambientIntensity, ptr, false);
-            ptr += Marshal.SizeOf(typeof(Vector4));
-            Marshal.StructureToPtr(this.attenuationMaxGamma, ptr, false);
-            ptr += Marshal.SizeOf(typeof(Vector4));
-            for (int i = 0; i < lights.Length; ++i) {
-                Marshal.StructureToPtr(this.lights[i], ptr, false);
-                ptr += Marshal.SizeOf(typeof(PerLight));
+        static public World parseWorld(Game game, string filename) {
+            StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\world\" + filename);
+            string line;
+            Vector4 ambient = Vector4.Zero, background = Vector4.Zero;
+            var children = new List<MovableObject>();
+            World retVal = new World(game);
+            while ((line = reader.ReadLine()) != null) {
+                line = line.Trim();
+                if (isSkipLine(line)) continue;
+                string[] items = line.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+                switch (items[0]) {
+                    case "base":
+                        if (items.Length < 2)
+                            throw new InvalidDataException("Not enough data to load for " + filename + ", data: " + line);
+                        children.Add(parseObject(retVal, items[1]));
+                        break;
+                    case "ambient":
+                        if (items.Length < 4) throw new InvalidDataException("Not enough data to load ambient lights for " + filename + ", data: " + line);
+                        ambient = new Vector4(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]), float.Parse(items[4]));
+                        break;
+                    case "background":
+                        if (items.Length < 4) throw new InvalidDataException("Not enough data to load background color for " + filename + ", data: " + line);
+                        background = new Vector4(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]), float.Parse(items[4]));
+                        break;
+                    default:
+                        continue;
+                }
             }
-            byte[] output = new byte[size];
-            Marshal.Copy(data, output, 0, size);
-            Marshal.FreeHGlobal(data);
-            return output;
+
+            retVal.addRootObjects(children);
+            retVal.setLighting(ambient, background);
+            return retVal;
         }
-    }
 
-    struct Material {
-        public Vector4 diffuseColor;
-        public Vector4 specularColor;
-        public Vector4 specularShininess;
-    }
-
-    class MyParser {
-        internal static protected DisplayObject parseObject(Game game, string filename) {
+        static private MovableObject parseObject(World world, string filename) {
             StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\base\" + filename);
             string line;
             Vector3 position = Vector3.Zero, scale = Vector3.One;
             Quaternion orientation = Quaternion.FromAxisAngle(Vector3.UnitY, 0);
 
-            var children = new List<DisplayObject>();
+            var children = new List<MovableObject>();
             Material mat = new Material();
             Mesh mesh = null;
-            PerLight perLight = new PerLight();
+            Lighting.PointLight perLight = new Lighting.PointLight();
             float size = 0f;
             float mass = 0f;
             Vector3 momentum = Vector3.Zero;
@@ -116,7 +99,7 @@ namespace Ascendant.Graphics {
                         break;
                     case "children":
                         for (int i = 1; i < items.Length; ++i) {
-                            children.Add(parseObject(game, items[i]));
+                            children.Add(parseObject(world, items[i]));
                         }
                         break;
                     case "mesh":
@@ -132,14 +115,15 @@ namespace Ascendant.Graphics {
                         continue;
                 }
             }
-            Physics.PhysicsObject physObj = new Physics.PhysicsObject(size, mass, position, momentum, orientation, scale, angularMomentum, mesh);
-            game.window.sim.AddObject(physObj);
-            DisplayObject retVal = MyLoader.loadDisplayObject(game, physObj, mat, perLight, children);
-            if (perLight.lightIntensity != Vector4.Zero) game.Lights.AddPointLight(retVal);
+            int matIndex = MaterialLoader.AddMaterial(mat);
+            MovableObject retVal = new MovableObject(world, matIndex, perLight, children, size, mass, position, momentum, orientation, scale, angularMomentum, mesh);
+            foreach (MovableObject child in children) {
+                child.setParent(retVal);
+            }
             return retVal;
         }
 
-        internal static protected PerLight parseLighting(string filename) {
+        static private Lighting.PointLight parseLighting(string filename) {
             StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\lighting\" + filename);
             string line;
             Vector4 intensity = Vector4.Zero;
@@ -159,7 +143,7 @@ namespace Ascendant.Graphics {
                         continue;
                 }
             }
-            PerLight light = new PerLight();
+            Lighting.PointLight light = new Lighting.PointLight();
             light.lightIntensity = intensity;
             light.cameraSpaceLightPos = position;
             return light;
@@ -175,7 +159,7 @@ namespace Ascendant.Graphics {
                 matMap.Add(key, newMat);
             }
         }
-        internal static protected Material parseMaterial(string filename, string materialName) {
+        static private Material parseMaterial(string filename, string materialName) {
             Material mat;
             String key = filename + materialName;
             if (!matMap.TryGetValue(key, out mat)) {
@@ -186,7 +170,11 @@ namespace Ascendant.Graphics {
                 Vector4 scolor = Vector4.Zero;
                 float shine = 0f;
                 while ((line = reader.ReadLine()) != null) {
-                    line = line.Trim();
+                    if (line.Contains('#')) {
+                        int commentsBegin = line.IndexOf('#');
+                        line = line.Substring(0, commentsBegin);
+                    }
+                    line = line.Trim().ToLower();
                     if (isSkipLine(line)) continue;
                     string[] items = line.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
                     switch (items[0]) {
@@ -222,8 +210,7 @@ namespace Ascendant.Graphics {
             return (line.StartsWith("#") || line.Equals(""));
         }
 
-        static Dictionary<String, Mesh> meshMap = new Dictionary<String, Mesh>();
-        internal static protected Mesh parseMesh(string filename) {
+        static private Mesh parseMesh(string filename) {
             Mesh mesh;
             String key = filename;
             if (!meshMap.TryGetValue(key, out mesh)) {
@@ -302,25 +289,16 @@ namespace Ascendant.Graphics {
                 var indexVertices = new List<Vector3>();
                 var indexTexCoords = new List<Vector2>();
                 var indexNormals = new List<Vector3>();
-                if (type == PrimitiveType.Triangles) {
-                    foreach (int u in vindices) {
-                        indexVertices.Add(vertices[u]);
-                    }
-                    foreach (int u in tindices) {
-                        //indexTexCoords.Add(texCoords[u]);
-                    }
-                    foreach (int u in nindices) {
-                        indexNormals.Add(normals[u]);
-                    }
-                } else if (type == PrimitiveType.Quads) {
-                    indexVertices = convertToTriangles(vindices, vertices);
-                    indexNormals = convertToTriangles(nindices, normals);
-                    //indexTexCoords
-                } else {
-                    throw new InvalidDataException("Mesh type was not triangles or quads");
+                foreach (int u in vindices) {
+                    indexVertices.Add(vertices[u]);
                 }
-               
-                mesh = new Mesh(indexVertices.ToArray(), indexTexCoords.ToArray(), indexNormals.ToArray());
+                foreach (int u in tindices) {
+                    //indexTexCoords.Add(texCoords[u]);
+                }
+                foreach (int u in nindices) {
+                    indexNormals.Add(normals[u]);
+                }
+                mesh = new Mesh(indexVertices.ToArray(), indexTexCoords.ToArray(), indexNormals.ToArray(), type);
                 meshMap.Add(key, mesh);
             }
             return mesh;
@@ -343,60 +321,5 @@ namespace Ascendant.Graphics {
             }
             return indexVertices;
         }
-    }
-    class MyLoader {
-        internal class MaterialLoader {
-            internal static uint g_materialUniformBuffer;
-
-            internal static List<Material> materials = new List<Material>();
-            internal static int m_sizeMaterialBlock;
-            internal static void LoadMaterialBufferBlock(int program) {
-                //Align the size of each MaterialBlock to the uniform buffer alignment.
-                int uniformBufferAlignSize = 0;
-                GL.GetInteger(GetPName.UniformBufferOffsetAlignment, out uniformBufferAlignSize);
-                int blockSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Material));
-                m_sizeMaterialBlock = blockSize + (uniformBufferAlignSize - (blockSize % uniformBufferAlignSize));
-
-                int sizeMaterialUniformBuffer = m_sizeMaterialBlock * materials.Count;
-
-                unsafe {
-                    IntPtr data = Marshal.AllocHGlobal(sizeMaterialUniformBuffer);
-                    IntPtr inData = data;
-                    for (int i = 0; i < materials.Count; ++i) {
-                        Marshal.StructureToPtr(materials[i], inData, false);
-                        inData = IntPtr.Add(inData, m_sizeMaterialBlock);
-                    }
-                    GL.GenBuffers(1, out g_materialUniformBuffer);
-                    GL.BindBuffer(BufferTarget.UniformBuffer, g_materialUniformBuffer);
-                    GL.BufferData(BufferTarget.UniformBuffer, (IntPtr)sizeMaterialUniformBuffer, data, BufferUsageHint.StaticDraw);
-                    Marshal.FreeHGlobal(data);
-                }
-                int materialBlock = GL.GetUniformBlockIndex(program, "Material");
-                GL.UniformBlockBinding(program, materialBlock, Window.g_materialBlockIndex);
-                GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-            }
-
-            internal static int AddMaterial(Material mat) {
-                int matIndex;
-                if (materials.Contains(mat)) {
-                    matIndex = materials.FindIndex(material => material.Equals(mat));
-                } else {
-                    materials.Add(mat);
-                    matIndex = materials.Count - 1;
-                }
-                return matIndex;
-            }
-
-            internal static int getMaterialCount() {
-                return materials.Count;
-            }
-        }
-
-
-        static internal DisplayObject loadDisplayObject(Game game, Physics.PhysicsObject physObj, Material mat, PerLight light, List<DisplayObject> children) {
-            int matIndex = MaterialLoader.AddMaterial(mat);
-            return new DisplayObject(game, physObj, matIndex, light, children);
-        }
-
     }
 }

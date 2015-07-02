@@ -1,8 +1,4 @@
 ﻿newmtl diamond
-#Ka 1.000 1.000 1.000     # ambient white
-#Kd 1.000 1.000 1.000     # diffuse white
-#Ks 0.500     # specular shininess
-
-dcolor .5 .5 .5 .5
-scolor .3 .3 .3 1
-shine .1
+Kd .5 .5 .5 .5       # diffuse color
+Ks .3 .3 .3 1		 # specular color
+ns .1				 # specular shininess

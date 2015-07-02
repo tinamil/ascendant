@@ -1,0 +1,4 @@
+﻿newmtl skin
+Kd 1 .87 .8 1 # diffuse color
+Ks 1 1 1 1  # specular color
+Ns 1      # specular shininess
