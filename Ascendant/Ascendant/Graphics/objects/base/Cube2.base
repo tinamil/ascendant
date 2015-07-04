@@ -1,11 +1,11 @@
 ﻿mesh Cube.obj
 
 scale .5 .5 .5
-position 2 2 2
-orientation 1 1 0 45
+position 0 0 0
+orientation 0 0 0 0
 size 5 #in meters, forming a cube
-mass 10 #kg
-momentum -3 -3 -3
+mass 5 #kg
+momentum 0 0 0
 angularMomentum 0 0 0
 
 mtl Cube.mtl cube

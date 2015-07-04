@@ -50,14 +50,12 @@ namespace Ascendant.Physics {
         }
 
         private void addCollision(ref Dictionary<MovableObject, List<MovableObject>> collisions, MovableObject box1, MovableObject box2) {
-            if (GilbertJohnsonKeerthi.CollisionTest(box1, box2)) {
-                List<MovableObject> box1Collisions;
-                if (!collisions.TryGetValue(box1, out box1Collisions)) {
-                    box1Collisions = new List<MovableObject>();
-                    collisions.Add(box1, box1Collisions);
-                }
-                box1Collisions.Add(box2);
+            List<MovableObject> box1Collisions;
+            if (!collisions.TryGetValue(box1, out box1Collisions)) {
+                box1Collisions = new List<MovableObject>();
+                collisions.Add(box1, box1Collisions);
             }
+            box1Collisions.Add(box2);
         }
     }
 }

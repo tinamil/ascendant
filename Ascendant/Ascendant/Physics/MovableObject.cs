@@ -12,7 +12,7 @@ namespace Ascendant.Physics {
     class MovableObject {
         internal State display ;
         internal State current ;
-        private State previous;
+        internal State previous;
 
         internal Lighting.PointLight pointLight = new Lighting.PointLight();
         

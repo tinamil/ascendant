@@ -8,6 +8,9 @@ using OpenTK;
 using Ascendant.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using MIConvexHull;
+using Ascendant.Physics.Collision;
+using Ascendant.Physics.Collision.React3D;
+using BulletSharp;
 
 namespace Ascendant.Physics {
 
@@ -29,8 +32,23 @@ namespace Ascendant.Physics {
         const float dt = 0.01f;
         double accumulator = 0.0;
         double prevTime = 0;
-
+        ExpandingPolytopeAlgorithm EPA = new ExpandingPolytopeAlgorithm();
         public void RunSim(long elapsedMillis) {
+            DbvtBroadphase broadphase = new DbvtBroadphase();
+             // Set up the collision configuration and dispatcher
+            DefaultCollisionConfiguration collisionConfiguration = new DefaultCollisionConfiguration();
+            CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);
+
+            // The actual physics solver
+            SequentialImpulseConstraintSolver solver = new SequentialImpulseConstraintSolver();
+
+            // The world.
+            DiscreteDynamicsWorld dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+            dynamicsWorld.Gravity = new Vector3(0, -9.8f, 0);
+
+            CollisionShape groundShape = new StaticPlaneShape(new Vector3(0, 1, 0), 1);
+            CollisionShape fallShape = new SphereShape(1);
+
             double newTime = elapsedMillis / 1000.0;
             double frameTime = newTime - prevTime;
             if (frameTime > .250) frameTime = .250;
@@ -45,7 +63,10 @@ namespace Ascendant.Physics {
                     if (collisions.TryGetValue(objects[i], out collideList)) {
                         for (int j = 0; j < collideList.Count; ++j) {
                             var box = collideList[j];
-                            CollisionResponse.collision(ref obj, ref box, Vector3.UnitY, Vector3.Zero);
+                            ContactInfo contact;
+                            if (GilbertJohnsonKeerthi.CollisionTest(obj, box, out contact)) {
+                                    CollisionResponse.collision(ref obj, ref box, contact);
+                            }
                         }
                     }
                 }

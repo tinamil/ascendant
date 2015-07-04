@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using OpenTK;
 using Ascendant.Graphics.objects;
+using MIConvexHull;
+using System.Diagnostics;
 
 namespace Ascendant.Physics {
     /// Physics state.
@@ -25,7 +27,7 @@ namespace Ascendant.Physics {
         internal float mass;                     // mass of the cube in kilograms.
         internal float inverseMass;              // inverse of the mass used to convert momentum to velocity.
         internal float inertiaTensor;            // inertia tensor of the cube (i have simplified it to a single value due to the mass properties a cube).
-        internal float inverseInertiaTensor;     // inverse inertia tensor used to convert angular momentum to angular velocity.
+        internal double inverseInertiaTensor;     // inverse inertia tensor used to convert angular momentum to angular velocity.
         internal SimpleAABB originalBoundingBox;  // Axis Aligned Bounding Box in model coordinates
         internal MovableObject parent;
         internal Mesh mesh;
@@ -75,18 +77,18 @@ namespace Ascendant.Physics {
 
         internal void recalculate(bool updateBoundingBox) {
             velocity = momentum * inverseMass;
-            angularVelocity = angularMomentum * inverseInertiaTensor;
+            angularVelocity = angularMomentum * (float)inverseInertiaTensor;
             orientation.Normalize();
             spin = Quaternion.Multiply(new Quaternion(angularVelocity.X, angularVelocity.Y, angularVelocity.Z, 0), 0.5f) * orientation;
             SimpleAABB.Update(originalBoundingBox, getModelToWorldMatrix(), out boundingBox);
         }
 
-        public Matrix4 getModelToWorldMatrix() {
+        public Matrix4 getModelToWorldMatrix(float scalingFactor = 1.0f) {
             Matrix4 Translate = Matrix4.CreateTranslation(position);
             //Rotate
             Matrix4 Rotate = Matrix4.CreateFromQuaternion(orientation);
             //Scale
-            Matrix4 Scale = Matrix4.CreateScale(scale);
+            Matrix4 Scale = Matrix4.CreateScale(scale * scalingFactor);
             // return Translate * Rotate * Scale * parentMatrix;
             return getParentMatrix() * Scale * Rotate * Translate;
         }
@@ -95,19 +97,85 @@ namespace Ascendant.Physics {
             return parent.getParentMatrix();
         }
 
-        public Vector3 MaxPointAlongDirectionOfConvexHull(Vector3 directionToMove, Vector3 startingPoint) {
+        DefaultConvexFace<DefaultVertex> lastFace;
+        private Vector3 searchAdjacentFaces(Vector3 direction) {
             Matrix4 transform = getModelToWorldMatrix();
-            float max = float.NegativeInfinity;
-            Vector3 point = startingPoint;
+            DefaultConvexFace<DefaultVertex> currentFace = lastFace ?? mesh.convexHull.Faces.ElementAt(0);
+            DefaultVertex currentVertex = currentFace.Vertices[0];
+            DefaultVertex bestVertex = currentVertex;
+            Vector3 pos = new Vector3((float)bestVertex.Position[0], (float)bestVertex.Position[1], (float)bestVertex.Position[2]);
+            float dot = Vector3.Dot(Vector3.Transform(pos, transform), direction);
+            float bestMax = dot;
+            float max = bestMax;
+            do {
+                if (max > bestMax) {
+                    bestMax = max;
+                    bestVertex = currentVertex;
+                    lastFace = currentFace;
+                }
 
-            foreach (MIConvexHull.DefaultVertex vertex in mesh.convexHull.Points) {
-                Vector3 pos = new Vector3((float)vertex.Position[0], (float)vertex.Position[1], (float)vertex.Position[2]);
-                float dot = Vector3.Dot(Vector3.Transform(pos, transform), directionToMove);
+                Dictionary<DefaultVertex, DefaultConvexFace<DefaultVertex>> dict = GetAdjacentVertices(ref currentFace, ref currentVertex);
+
+                foreach (DefaultVertex vertex in dict.Keys) {
+                    pos = new Vector3((float)vertex.Position[0], (float)vertex.Position[1], (float)vertex.Position[2]);
+                    dot = Vector3.Dot(Vector3.Transform(pos, transform), direction);
+                    if (dot > max) {
+                        max = dot;
+                        currentFace = dict[vertex];
+                        currentVertex = vertex;
+                    }
+                }
+
+            } while (bestMax != max);
+
+            return new Vector3((float)bestVertex.Position[0], (float)bestVertex.Position[1], (float)bestVertex.Position[2]);
+        }
+
+        private Dictionary<DefaultVertex, DefaultConvexFace<DefaultVertex>> GetAdjacentVertices(ref DefaultConvexFace<DefaultVertex> currentFace, ref DefaultVertex currentVertex) {
+            var adj = new Dictionary<DefaultVertex, DefaultConvexFace<DefaultVertex>>();
+            int currentVertexIndex = 0;
+            for (int i = 0; i < currentFace.Vertices.Length; ++i) {
+                if (currentFace.Vertices[i] == currentVertex) {
+                    currentVertexIndex = i;
+                    break;
+                }
+            }
+            for (int i = 0; i < currentFace.Adjacency.Length; ++i) {
+                if (i != currentVertexIndex) {
+                    foreach (DefaultVertex v in currentFace.Adjacency[i].Vertices) {
+                        if (v != currentFace.Vertices[currentVertexIndex] && !adj.ContainsKey(v)) {
+                            adj.Add(v, currentFace.Adjacency[i]);
+                        }
+                    }
+                }
+            }
+            return adj;
+        }
+
+        public Vector3d MaxPointAlongDirectionOfConvexHull(Vector3d directionToMove, double scalingFactor = 1.0) {
+            //Vector3 bestGreedy = searchAdjacentFaces(directionToMove);
+
+            //Naive global search solution
+            Matrix4 transform = getModelToWorldMatrix((float)scalingFactor);
+            Matrix4d transformD = new Matrix4d(
+                transform.M11, transform.M12, transform.M13, transform.M14, 
+                transform.M21, transform.M22, transform.M23, transform.M24,
+                transform.M31, transform.M32, transform.M33, transform.M34,
+                transform.M41, transform.M42, transform.M43, transform.M44);
+
+            double max = double.NegativeInfinity;
+            Vector3d point = Vector3d.Zero;
+            
+            foreach (DefaultVertex vertex in mesh.convexHull.Points) {
+                Vector3d pos = new Vector3d(vertex.Position[0], vertex.Position[1], vertex.Position[2]);
+                Vector3d.Transform(ref pos, ref transformD, out pos);
+                double dot = Vector3d.Dot(pos, directionToMove);
                 if (dot > max) {
                     max = dot;
                     point = pos;
                 }
             }
+            //Debug.Assert(bestGreedy == point);
             return point;
         }
     }

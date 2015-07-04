@@ -91,6 +91,10 @@
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BulletSharp, Version=2.83.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\BulletSharp.dll</HintPath>
+    </Reference>
     <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Documents\OpenTK\1.1\Binaries\OpenTK\Debug\OpenTK.dll</HintPath>
@@ -106,15 +110,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppConfig.cs" />
-    <Compile Include="Graphics\cameras\FPCamera.cs" />
-    <Compile Include="Graphics\objects\Lighting.cs" />
-    <Compile Include="Graphics\objects\Material.cs" />
-    <Compile Include="Graphics\objects\Mesh.cs" />
-    <Compile Include="Graphics\objects\MyObjParser.cs" />
+    <Compile Include="Graphics\FPCamera.cs" />
+    <Compile Include="Graphics\Lighting.cs" />
+    <Compile Include="Graphics\Material.cs" />
+    <Compile Include="Graphics\Mesh.cs" />
+    <Compile Include="Graphics\MyObjParser.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Framework.cs" />
-    <Compile Include="Graphics\cameras\ICamera.cs" />
-    <Compile Include="Graphics\objects\World.cs" />
+    <Compile Include="Graphics\ICamera.cs" />
+    <Compile Include="Graphics\World.cs" />
+    <Compile Include="Physics\Collision\React3D\ExpandingPolytopeAlgorithm.cs" />
+    <Compile Include="Physics\Collision\ContactInfo.cs" />
+    <Compile Include="Physics\Collision\React3D\EdgeEPA.cs" />
+    <Compile Include="Physics\Collision\React3D\React3D_GJK.cs" />
+    <Compile Include="Physics\Collision\React3D\TriangleEPA.cs" />
+    <Compile Include="Physics\Collision\React3D\TriangleStore.cs" />
+    <Compile Include="Physics\Collision\React3D\Simplex.cs" />
     <Compile Include="Physics\MIConvexHull\Configuration.cs" />
     <Compile Include="Physics\MIConvexHull\ConvexHull.cs" />
     <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Core.cs" />
@@ -134,13 +145,13 @@
     <Compile Include="Physics\MIConvexHull\Triangulation\VoronoiEdge.cs" />
     <Compile Include="Physics\MIConvexHull\Triangulation\VoronoiMesh.cs" />
     <Compile Include="Physics\MovableObject.cs" />
-    <Compile Include="Physics\SortSweep.cs" />
+    <Compile Include="Physics\Collision\SortSweep.cs" />
     <Compile Include="Physics\State.cs" />
     <Compile Include="Window.cs" />
-    <Compile Include="Physics\AABB.cs" />
-    <Compile Include="Physics\BoundingVolumeTree.cs" />
+    <Compile Include="Physics\Collision\AABB.cs" />
+    <Compile Include="Physics\Collision\BoundingVolumeTree.cs" />
     <Compile Include="Physics\CollisionResponse.cs" />
-    <Compile Include="Physics\GJK.cs" />
+    <Compile Include="Physics\Collision\GJK.cs" />
     <Compile Include="Physics\Simulation.cs" />
     <Compile Include="Physics\Constants.cs" />
     <Compile Include="Program.cs" />
@@ -153,6 +164,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Graphics\objects\base\Cube2.base">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Graphics\objects\base\Diamond.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -238,6 +252,7 @@
   <ItemGroup>
     <Content Include="Physics\MIConvexHull\MIConvexHull.csproj" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
