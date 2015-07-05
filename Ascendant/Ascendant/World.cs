@@ -15,6 +15,7 @@ namespace Ascendant.Graphics.objects {
         internal protected Lighting lights;
 
         readonly Stopwatch timer = Stopwatch.StartNew();
+        private long stoppedTime = 0L;
 
         readonly protected internal Game parentGame;
 
@@ -43,8 +44,7 @@ namespace Ascendant.Graphics.objects {
             else
                 GL.Disable(EnableCap.FramebufferSrgb);
 
-
-            lights.Render(parentGame.Camera.GetWorldToCameraMatrix());
+            lights.Render(parentGame.Camera.GetWorldToCameraMatrix(), timer.ElapsedMilliseconds);
             foreach (GameObject obj in children) {
                 obj.Render();
             }
@@ -64,6 +64,7 @@ namespace Ascendant.Graphics.objects {
 
         internal void Pause() {
             timer.Stop();
+            stoppedTime = timer.ElapsedMilliseconds;
         }
         internal void Resume() {
             timer.Start();
@@ -74,6 +75,11 @@ namespace Ascendant.Graphics.objects {
             }
         }
 
+        internal long currentTime() {
+            if (timer.IsRunning) return timer.ElapsedMilliseconds;
+            else return stoppedTime;
+        }
+
         internal void addRootObjects(List<GameObject> newObjects) {
             this.children.AddRange(newObjects);
 
@@ -81,8 +87,12 @@ namespace Ascendant.Graphics.objects {
             lights = new Lighting(children);
         }
 
-        internal void setLighting(Vector4 ambient, Vector4 background) {
-            lights.SetGlobalLighting(ambient, background);
+        internal void setSun(TimedLinearInterpolator<Sun> sunTimer) {
+            lights.setSun(sunTimer);
+        }
+
+        internal Vector4 getBackgroundColor() {
+            return lights.sunTimer.Interpolate(Sun.Alpha(timer.ElapsedMilliseconds)).background; 
         }
     }
 }

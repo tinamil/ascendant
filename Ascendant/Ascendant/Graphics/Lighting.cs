@@ -10,6 +10,48 @@ using Ascendant.Physics;
 
 namespace Ascendant.Graphics.lighting {
 
+    struct Sun : ILerpable {
+        public Vector4 ambient;
+        public Vector4 background;
+        public Vector4 intensity;
+        public float maxIntensity;
+
+        const float cycleTime = 30;
+
+        static public float Alpha(long millis) { return ((millis / 1000) % cycleTime) / cycleTime; }
+
+        static public Vector4 GetSunlightDirection(long millis) {
+            float angle = 2.0f * 3.14159f * Alpha(millis);
+            Vector4 sunDirection = new Vector4((float)Math.Sin(angle), (float)Math.Cos(angle), 0, 0);
+
+            //Keep the sun from being perfectly centered overhead.
+            sunDirection = Vector4.Transform(sunDirection, Matrix4.CreateRotationX(5));
+
+            return sunDirection;
+        }
+
+        ILerpable ILerpable.multiply(float val) {
+            Sun retVal = new Sun();
+            retVal.ambient = ambient * val;
+            retVal.background = background * val;
+            retVal.intensity = intensity * val;
+            retVal.maxIntensity = maxIntensity * val;
+            return retVal;
+        }
+
+        ILerpable ILerpable.add(ILerpable other) {
+            var rightVal = other as Sun?;
+            if (rightVal.HasValue) {
+                Sun retVal = new Sun();
+                retVal.ambient = ambient + rightVal.Value.ambient;
+                retVal.background = background + rightVal.Value.background;
+                retVal.intensity = intensity + rightVal.Value.intensity;
+                retVal.maxIntensity = maxIntensity + rightVal.Value.maxIntensity;
+                return retVal;
+            } return null;
+        }
+    }
+
     class Lighting {
         uint g_lightUniformBuffer;
         uint g_pointLightUniformBuffer;
@@ -18,18 +60,15 @@ namespace Ascendant.Graphics.lighting {
         const float halfLightDistance = 70.0f;
         const float gamma = 2.2f;
         const float attenuation = 1 / (halfLightDistance * halfLightDistance);
-        const float maxIntensity = 2f;
 
-        private Vector4 ambient;
-        internal Vector4 background { get; private set; }
+        public TimedLinearInterpolator<Sun> sunTimer { get; private set; }
 
         public Lighting(List<GameObject> objects) {
             worldObjects = objects;
         }
 
-        public void SetGlobalLighting(Vector4 _ambient, Vector4 _background) {
-            this.ambient = _ambient;
-            this.background = _background;
+        internal void setSun(TimedLinearInterpolator<Sun> _sunTimer) {
+            this.sunTimer = _sunTimer;
         }
 
         public void InitializeOpenGL(int program) {
@@ -41,8 +80,7 @@ namespace Ascendant.Graphics.lighting {
 
             GL.GenBuffers(1, out g_lightUniformBuffer);
             GL.BindBuffer(BufferTarget.UniformBuffer, g_lightUniformBuffer);
-            LightBlockGamma data = GetLightInformation();
-            GL.BufferData(BufferTarget.UniformBuffer, new IntPtr(Marshal.SizeOf(typeof(LightBlockGamma))), ref data, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.UniformBuffer, new IntPtr(Marshal.SizeOf(typeof(LightBlockGamma))), IntPtr.Zero, BufferUsageHint.DynamicDraw);
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
             GL.BindBufferBase(BufferRangeTarget.UniformBuffer, Window.g_lightBlockIndex, g_lightUniformBuffer);
@@ -73,9 +111,8 @@ namespace Ascendant.Graphics.lighting {
             internal Vector4 attenuationMaxGamma;
         }
 
-        internal PointLight[] GetPointLights(Matrix4 worldToCameraMat) {
+        internal PointLight[] GetPointLights(Matrix4 worldToCameraMat, long currentMillis) {
             PointLight[] lights = new PointLight[PointLight.maxLights];
-
             int light = 0;
             int objectIndex = 0;
             //Load all the lights from the world up to the maximum (16 by default)
@@ -90,6 +127,12 @@ namespace Ascendant.Graphics.lighting {
                     light += 1;
                 }
             }
+            if (light < PointLight.maxLights) {
+                Vector4 sunPos = new Vector4(Vector4.Transform(Sun.GetSunlightDirection(currentMillis), worldToCameraMat));
+                lights[light].cameraSpaceLightPos = sunPos;
+                lights[light].lightIntensity = sunTimer.Interpolate(Sun.Alpha(currentMillis)).intensity;
+                light += 1;
+            }
             //Fill the rest of the light array with Zero vectors to prevent garbage memory from being interpreted as lights
             while (light < PointLight.maxLights) {
                 lights[light].cameraSpaceLightPos = Vector4.Zero;
@@ -99,12 +142,13 @@ namespace Ascendant.Graphics.lighting {
             return lights;
         }
 
-        internal LightBlockGamma GetLightInformation() {
+        internal LightBlockGamma GetLightInformation(long currentMillis) {
             LightBlockGamma lightData = new LightBlockGamma();
-            lightData.ambientIntensity = ambient;
+            Sun sun = sunTimer.Interpolate(Sun.Alpha(currentMillis));
+            lightData.ambientIntensity = sun.ambient;
             lightData.attenuationMaxGamma.X = attenuation;
-            lightData.attenuationMaxGamma.Y = maxIntensity;
-            lightData.attenuationMaxGamma.Z = 1/gamma;
+            lightData.attenuationMaxGamma.Y = sun.maxIntensity;
+            lightData.attenuationMaxGamma.Z = 1 / gamma;
             return lightData;
         }
 
@@ -112,8 +156,8 @@ namespace Ascendant.Graphics.lighting {
             return new Vector4((float)Math.Pow(input[0], 1.0f / gamma), (float)Math.Pow(input[1], 1.0f / gamma), (float)Math.Pow(input[2], 1.0f / gamma), input[3]);
         }
 
-        internal void Render(Matrix4 worldToCamMat) {
-            PointLight[] lightData = GetPointLights(worldToCamMat);
+        internal void Render(Matrix4 worldToCamMat, long currentMillis) {
+            PointLight[] lightData = GetPointLights(worldToCamMat, currentMillis);
             unsafe {
                 GCHandle pinnedArray = GCHandle.Alloc(lightData, GCHandleType.Pinned);
                 GL.BindBuffer(BufferTarget.UniformBuffer, g_pointLightUniformBuffer);
@@ -121,6 +165,14 @@ namespace Ascendant.Graphics.lighting {
                 GL.BindBuffer(BufferTarget.UniformBuffer, 0);
                 pinnedArray.Free();
             }
+
+            Debug.WriteLine(lightData[1].lightIntensity);
+
+            LightBlockGamma data = GetLightInformation(currentMillis);
+            GL.BindBuffer(BufferTarget.UniformBuffer, g_lightUniformBuffer);
+            GL.BufferData(BufferTarget.UniformBuffer, new IntPtr(Marshal.SizeOf(typeof(LightBlockGamma))), ref data, BufferUsageHint.DynamicDraw);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
         }
+
     }
 }

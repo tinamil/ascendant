@@ -152,6 +152,10 @@
     <None Include="Graphics\objects\base\Man.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Graphics\objects\lighting\Sun.light">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Graphics\objects\material\Terrain.mtl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -191,7 +195,10 @@
     </None>
     <None Include="Graphics\objects\textures\terrain_tex.xcf" />
     <None Include="Graphics\objects\textures\terrain_tex2.dds">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\shaders\screenCoords.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

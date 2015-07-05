@@ -61,15 +61,19 @@ namespace Ascendant {
         }
 
     }
+    public interface ILerpable {
+        ILerpable multiply(float val);
+        ILerpable add(ILerpable other);
+    }
 
-    public class WeightedLinearInterpolator {
+    public class WeightedLinearInterpolator<T> where T : ILerpable, new() {
 
         protected List<Data> m_values = new List<Data>();
         int NumSegments() { return m_values.Count == 0 ? 0 : m_values.Count() - 1; }
 
-        public Vector4 Interpolate(float fAlpha) {
+        public T Interpolate(float fAlpha) {
             if (m_values.Count == 0)
-                return new Vector4();
+                return new T();
             if (m_values.Count == 1)
                 return m_values[0].data;
 
@@ -88,24 +92,25 @@ namespace Ascendant {
 
             float invSecAlpha = 1.0f - sectionAlpha;
 
-            return m_values[segment - 1].data * invSecAlpha + m_values[segment].data * sectionAlpha;
+            return (T)m_values[segment - 1].data.multiply(invSecAlpha).add(m_values[segment].data.multiply(sectionAlpha));
         }
 
         protected WeightedLinearInterpolator() { }
 
         protected struct Data {
-            public Vector4 data;
+            public T data;
             public float weight;
         };
 
     }
-    public class TimedLinearInterpolator : WeightedLinearInterpolator {
 
-        internal void SetValues(Tuple<Vector4, float>[] data, bool isLooping = true) {
+    public class TimedLinearInterpolator<T> : WeightedLinearInterpolator<T> where T : ILerpable, new() {
+
+        internal void SetValues(Tuple<T, float>[] data, bool isLooping = true) {
             m_values.Clear();
 
             for (int i = 0; i < data.Length; ++i) {
-                Data currData = new Data();
+                var currData = new Data();
                 currData.data = data[i].Item1;
                 currData.weight = data[i].Item2;
 

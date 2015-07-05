@@ -10,6 +10,7 @@ using Ascendant.Graphics.lighting;
 using System.Diagnostics;
 using Ascendant.Physics;
 using Ascendant.Graphics.objects;
+using System.Xml.Linq;
 
 namespace Ascendant.Graphics {
     static class MyParser {
@@ -19,8 +20,8 @@ namespace Ascendant.Graphics {
         static public World parseWorld(Game game, string filename) {
             StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\world\" + filename);
             string line;
-            Vector4 ambient = Vector4.Zero, background = Vector4.Zero;
             var children = new List<GameObject>();
+            TimedLinearInterpolator<Sun> sunTimer = null;
             World retVal = new World(game);
             while ((line = reader.ReadLine()) != null) {
                 line = line.Trim();
@@ -37,22 +38,55 @@ namespace Ascendant.Graphics {
                             throw new InvalidDataException("Not enough data to load for " + filename + ", data: " + line);
                         children.Add(parseStaticObject(retVal, items[1]));
                         break;
-                    case "ambient":
-                        if (items.Length < 4) throw new InvalidDataException("Not enough data to load ambient lights for " + filename + ", data: " + line);
-                        ambient = new Vector4(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]), float.Parse(items[4]));
+                    case "sun":
+                        sunTimer = parseSun(items[1]);
                         break;
-                    case "background":
-                        if (items.Length < 4) throw new InvalidDataException("Not enough data to load background color for " + filename + ", data: " + line);
-                        background = new Vector4(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]), float.Parse(items[4]));
-                        break;
-                    default:
+                   default:
                         continue;
                 }
             }
 
             retVal.addRootObjects(children);
-            retVal.setLighting(ambient, background);
+            retVal.setSun(sunTimer);
             return retVal;
+        }
+
+        private static TimedLinearInterpolator<Sun> parseSun(string path) {
+            var timer = new TimedLinearInterpolator<Sun>();
+            XDocument xdocument = XDocument.Load(AppConfig.Default.itempath + @"\lighting\" + path);
+            IEnumerable<XElement> keys = xdocument.Descendants("key");
+            var maxTime = xdocument.Root.Attribute("time");
+            var data = new List<Tuple<Sun, float>>();
+            foreach (var key in keys) {
+
+                Sun sun = new Sun();
+
+                var time = float.Parse(key.Attribute("time").Value) / 24f;
+                
+                {
+                    var ambient = key.Attribute("ambient").Value;
+                    var ambientStrings = ambient.Split();
+                    sun.ambient = new Vector4(float.Parse(ambientStrings[0]), float.Parse(ambientStrings[1]), float.Parse(ambientStrings[2]), float.Parse(ambientStrings[3]));
+                }
+                {
+                    var intensity = key.Attribute("intensity").Value;
+                    var intensityStrings = intensity.Split();
+                    sun.intensity = new Vector4(float.Parse(intensityStrings[0]), float.Parse(intensityStrings[1]), float.Parse(intensityStrings[2]), float.Parse(intensityStrings[3]));
+                }
+                {
+                    var background = key.Attribute("background").Value;
+                    var backgroundStrings = background.Split();
+                    sun.background = new Vector4(float.Parse(backgroundStrings[0]), float.Parse(backgroundStrings[1]), float.Parse(backgroundStrings[2]), float.Parse(backgroundStrings[3]));
+                }
+                {
+                    var maxIntensity = key.Attribute("max-intensity").Value;
+                    sun.maxIntensity = float.Parse(maxIntensity);
+                }
+
+                data.Add(new Tuple<Sun, float>(sun, time));
+            }
+            timer.SetValues(data.ToArray());
+            return timer;
         }
 
         static private StaticObject parseStaticObject(World world, string filename) {

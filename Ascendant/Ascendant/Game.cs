@@ -140,7 +140,7 @@ namespace Ascendant {
         }
 
         internal Vector4 getBackground() {
-            return world.lights.background;
+            return world.getBackgroundColor();
         }
     }
 }
