@@ -1,4 +1,4 @@
-﻿base Cube.base 
-base Cube2.base
-ambient 1 1 1 .5
+﻿static Terrain.base
+dynamic Cube.base
+ambient 1 1 1 1
 background 0.1 0.1 0.1 1

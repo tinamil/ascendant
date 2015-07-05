@@ -10,28 +10,32 @@ using Ascendant.Graphics.lighting;
 using System.Diagnostics;
 using Ascendant.Physics;
 using Ascendant.Graphics.objects;
-using MIConvexHull;
 
 namespace Ascendant.Graphics {
     static class MyParser {
-        
+
         static Dictionary<String, Mesh> meshMap = new Dictionary<String, Mesh>();
 
         static public World parseWorld(Game game, string filename) {
             StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\world\" + filename);
             string line;
             Vector4 ambient = Vector4.Zero, background = Vector4.Zero;
-            var children = new List<MovableObject>();
+            var children = new List<GameObject>();
             World retVal = new World(game);
             while ((line = reader.ReadLine()) != null) {
                 line = line.Trim();
                 if (isSkipLine(line)) continue;
                 string[] items = line.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
                 switch (items[0]) {
-                    case "base":
+                    case "dynamic":
                         if (items.Length < 2)
                             throw new InvalidDataException("Not enough data to load for " + filename + ", data: " + line);
-                        children.Add(parseObject(retVal, items[1]));
+                        children.Add(parseDynamicObject(retVal, items[1]));
+                        break;
+                    case "static":
+                        if (items.Length < 2)
+                            throw new InvalidDataException("Not enough data to load for " + filename + ", data: " + line);
+                        children.Add(parseStaticObject(retVal, items[1]));
                         break;
                     case "ambient":
                         if (items.Length < 4) throw new InvalidDataException("Not enough data to load ambient lights for " + filename + ", data: " + line);
@@ -51,7 +55,63 @@ namespace Ascendant.Graphics {
             return retVal;
         }
 
-        static private MovableObject parseObject(World world, string filename) {
+        static private StaticObject parseStaticObject(World world, string filename) {
+            StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\base\" + filename);
+            string line;
+            Vector3 position = Vector3.Zero, scale = Vector3.One;
+            Quaternion orientation = Quaternion.FromAxisAngle(Vector3.UnitY, 0);
+
+            var children = new List<StaticObject>();
+            Material mat = new Material();
+            Mesh mesh = null;
+            Lighting.PointLight perLight = new Lighting.PointLight();
+            while ((line = reader.ReadLine()) != null) {
+                line = line.Trim();
+                if (isSkipLine(line)) continue;
+                string[] items = line.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+                switch (items[0]) {
+                    case "position":
+                        if (items.Length < 4)
+                            throw new InvalidDataException("Not enough data to complete position for " + filename + ", data: " + line);
+                        position = new Vector3(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]));
+                        break;
+                    case "scale":
+                        if (items.Length < 4)
+                            throw new InvalidDataException("Not enough data to complete scale for " + filename + ", data: " + line);
+                        scale = new Vector3(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]));
+                        break;
+                    case "orientation":
+                        if (items.Length < 5)
+                            throw new InvalidDataException("Not enough data to complete orientation for " + filename + ", data: " + line);
+                        orientation = Quaternion.FromAxisAngle(new Vector3(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3])), float.Parse(items[4]));
+                        break;
+                    case "children":
+                        for (int i = 1; i < items.Length; ++i) {
+                            children.Add(parseStaticObject(world, items[i]));
+                        }
+                        break;
+                    case "mesh":
+                        mesh = parseMesh(items[1]);
+                        break;
+                    case "mtl":
+                        mat = parseMaterial(items[1], items[2]);
+                        break;
+                    case "light":
+                        perLight = parseLighting(items[1]);
+                        break;
+                    default:
+                        continue;
+                }
+            }
+            int matIndex = MaterialLoader.AddMaterial(mat);
+            StaticObject retVal = new StaticObject(world, matIndex, perLight, children, position, orientation, scale, mesh);
+            foreach (GameObject child in children) {
+                child.setParent(retVal);
+            }
+            return retVal;
+        }
+
+        static private MovableObject parseDynamicObject(World world, string filename) {
             StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\base\" + filename);
             string line;
             Vector3 position = Vector3.Zero, scale = Vector3.One;
@@ -61,7 +121,6 @@ namespace Ascendant.Graphics {
             Material mat = new Material();
             Mesh mesh = null;
             Lighting.PointLight perLight = new Lighting.PointLight();
-            float size = 0f;
             float mass = 0f;
             Vector3 momentum = Vector3.Zero;
             Vector3 angularMomentum = Vector3.Zero;
@@ -85,9 +144,6 @@ namespace Ascendant.Graphics {
                             throw new InvalidDataException("Not enough data to complete orientation for " + filename + ", data: " + line);
                         orientation = Quaternion.FromAxisAngle(new Vector3(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3])), float.Parse(items[4]));
                         break;
-                    case "size":
-                        size = float.Parse(items[1]);
-                        break;
                     case "mass":
                         mass = float.Parse(items[1]);
                         break;
@@ -99,7 +155,7 @@ namespace Ascendant.Graphics {
                         break;
                     case "children":
                         for (int i = 1; i < items.Length; ++i) {
-                            children.Add(parseObject(world, items[i]));
+                            children.Add(parseDynamicObject(world, items[i]));
                         }
                         break;
                     case "mesh":
@@ -116,7 +172,7 @@ namespace Ascendant.Graphics {
                 }
             }
             int matIndex = MaterialLoader.AddMaterial(mat);
-            MovableObject retVal = new MovableObject(world, matIndex, perLight, children, size, mass, position, momentum, orientation, scale, angularMomentum, mesh);
+            MovableObject retVal = new MovableObject(world, matIndex, perLight, children, mass, position, momentum, orientation, scale, angularMomentum, mesh);
             foreach (MovableObject child in children) {
                 child.setParent(retVal);
             }
@@ -219,9 +275,10 @@ namespace Ascendant.Graphics {
                 var vertices = new List<Vector3>();
                 var texCoords = new List<Vector2>();
                 var normals = new List<Vector3>();
-                var vindices = new List<int>();
-                var nindices = new List<int>();
-                var tindices = new List<int>();
+                var vindices = new List<uint>();
+                var nindices = new List<uint>();
+                var tindices = new List<uint>();
+                String textureFile = null;
                 bool backwards = false;
                 PrimitiveType type = PrimitiveType.Triangles;
                 while ((line = reader.ReadLine()) != null) {
@@ -233,6 +290,8 @@ namespace Ascendant.Graphics {
                             if (items[1] == "ccw") {
                                 backwards = true;
                             }
+                            break;
+                        case "texture": textureFile = items[1];
                             break;
                         case "v":
                             if (items.Length < 4)
@@ -270,13 +329,13 @@ namespace Ascendant.Graphics {
                             }
                             for (int i = 1; i < items.Length; ++i) {
                                 var index = items[i].Split('/');
-                                vindices.Add((ushort)(ushort.Parse(index[0]) - 1));
+                                vindices.Add((uint.Parse(index[0]) - 1));
                                 if (index.Length > 1 && index[1] != "")
-                                    tindices.Add((ushort)(ushort.Parse(index[1]) - 1));
+                                    tindices.Add((uint.Parse(index[1]) - 1));
                                 else
                                     tindices.Add(vindices[vindices.Count - 1]);
                                 if (index.Length > 2 && index[2] != "")
-                                    nindices.Add((ushort)(ushort.Parse(index[2]) - 1));
+                                    nindices.Add((uint.Parse(index[2]) - 1));
                                 else
                                     nindices.Add(vindices[vindices.Count - 1]);
                             }
@@ -292,13 +351,15 @@ namespace Ascendant.Graphics {
                 foreach (int u in vindices) {
                     indexVertices.Add(vertices[u]);
                 }
-                foreach (int u in tindices) {
-                    //indexTexCoords.Add(texCoords[u]);
+                if (texCoords.Count > 0) {
+                    foreach (int u in tindices) {
+                        indexTexCoords.Add(texCoords[u]);
+                    }
                 }
                 foreach (int u in nindices) {
                     indexNormals.Add(normals[u]);
                 }
-                mesh = new Mesh(indexVertices.ToArray(), indexTexCoords.ToArray(), indexNormals.ToArray(), type);
+                mesh = new Mesh(indexVertices.ToArray(), indexTexCoords.ToArray(), indexNormals.ToArray(), type, textureFile);
                 meshMap.Add(key, mesh);
             }
             return mesh;

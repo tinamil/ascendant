@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using OpenTK;
 using OpenTK.Graphics.OpenGL4;
-using MIConvexHull;
 
 namespace Ascendant.Graphics.objects {
     class Mesh {
@@ -12,13 +11,14 @@ namespace Ascendant.Graphics.objects {
         public Vector3[] vertices { get; private set; }
         public Vector2[] texCoords { get; private set; }
         public Vector3[] normals { get; private set; }
-        public ConvexHull<DefaultVertex, DefaultConvexFace<DefaultVertex>> convexHull { get; private set; }
+        public String textureFile { get; set; }
 
-        public Mesh(Vector3[] _v, Vector2[] _t, Vector3[] _n, PrimitiveType _type) {
+        public Mesh(Vector3[] _v, Vector2[] _t, Vector3[] _n, PrimitiveType _type, String _textureFile = null) {
             vertices = _v;
             texCoords = _t;
             normals = _n;
             this.type = _type;
+            this.textureFile = _textureFile;
             var convexVertices = new List<double[]>();
             for (int i = 0; i < vertices.Length; ++i) {
                 Double[] pos = new Double[3];
@@ -27,7 +27,6 @@ namespace Ascendant.Graphics.objects {
                 pos[1] = vertices[i].Y;
                 pos[2] = vertices[i].Z;
             }
-            convexHull = MIConvexHull.ConvexHull.Create(convexVertices);
         }
 
         /**

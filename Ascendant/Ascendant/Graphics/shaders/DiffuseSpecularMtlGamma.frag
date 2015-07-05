@@ -1,9 +1,12 @@
 #version 430
 
+in vec2 colorCoord;
 in vec3 vertexNormal;
 in vec3 cameraSpacePosition;
 
 out vec4 outputColor;
+
+uniform sampler2D diffuseColorTex;
 
 layout(std140) uniform;
 
@@ -80,12 +83,14 @@ vec4 ComputeLighting(in PerLight lightData)
 
 void main()
 {
-	vec4 accumLighting = Mtl.diffuseColor * Lgt.ambientIntensity;
+	vec4 gamma = vec4(Lgt.attenuationMaxGamma.z);
+	gamma.w = 1.0;
+	vec4 diffuseColor = pow(texture(diffuseColorTex, colorCoord), 1/gamma) + Mtl.diffuseColor;
+	vec4 accumLighting = diffuseColor * Lgt.ambientIntensity;
 	for(int light = 0; light < numberOfLights; light++){
 		accumLighting += ComputeLighting(PLight[light]);
 	}
 	accumLighting = accumLighting / Lgt.attenuationMaxGamma.y; 
-	vec4 gamma = vec4(Lgt.attenuationMaxGamma.z);
-	gamma.w = 1.0;
-	outputColor = pow(accumLighting, gamma);
+	//outputColor = pow(accumLighting, gamma);
+	outputColor = accumLighting;
 }

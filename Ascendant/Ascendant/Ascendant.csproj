@@ -118,42 +118,15 @@
     <Compile Include="Game.cs" />
     <Compile Include="Framework.cs" />
     <Compile Include="Graphics\ICamera.cs" />
-    <Compile Include="Graphics\World.cs" />
-    <Compile Include="Physics\Collision\React3D\ExpandingPolytopeAlgorithm.cs" />
-    <Compile Include="Physics\Collision\ContactInfo.cs" />
-    <Compile Include="Physics\Collision\React3D\EdgeEPA.cs" />
-    <Compile Include="Physics\Collision\React3D\React3D_GJK.cs" />
-    <Compile Include="Physics\Collision\React3D\TriangleEPA.cs" />
-    <Compile Include="Physics\Collision\React3D\TriangleStore.cs" />
-    <Compile Include="Physics\Collision\React3D\Simplex.cs" />
-    <Compile Include="Physics\MIConvexHull\Configuration.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Core.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Data.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Initialize.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\Algorithm\Result.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\Collections.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\ConvexFace.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\DataModel.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\MathHelper.cs" />
-    <Compile Include="Physics\MIConvexHull\ConvexHull\ObjectManager.cs" />
-    <Compile Include="Physics\MIConvexHull\IVertex.cs" />
-    <Compile Include="Physics\MIConvexHull\Triangulation.cs" />
-    <Compile Include="Physics\MIConvexHull\Triangulation\DelaunayTrianglationInternal.cs" />
-    <Compile Include="Physics\MIConvexHull\Triangulation\DelaunayTriangulation.cs" />
-    <Compile Include="Physics\MIConvexHull\Triangulation\TriangulationCell.cs" />
-    <Compile Include="Physics\MIConvexHull\Triangulation\VoronoiEdge.cs" />
-    <Compile Include="Physics\MIConvexHull\Triangulation\VoronoiMesh.cs" />
+    <Compile Include="Graphics\objects\textures\LoaderDDS.cs" />
+    <Compile Include="Graphics\objects\textures\LoaderGDI.cs" />
+    <Compile Include="Graphics\objects\textures\LoaderStatics.cs" />
+    <Compile Include="Physics\StaticObject.cs" />
+    <Compile Include="Physics\GameObject.cs" />
+    <Compile Include="World.cs" />
     <Compile Include="Physics\MovableObject.cs" />
-    <Compile Include="Physics\Collision\SortSweep.cs" />
-    <Compile Include="Physics\State.cs" />
     <Compile Include="Window.cs" />
-    <Compile Include="Physics\Collision\AABB.cs" />
-    <Compile Include="Physics\Collision\BoundingVolumeTree.cs" />
-    <Compile Include="Physics\CollisionResponse.cs" />
-    <Compile Include="Physics\Collision\GJK.cs" />
     <Compile Include="Physics\Simulation.cs" />
-    <Compile Include="Physics\Constants.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AppConfig.Designer.cs">
@@ -164,13 +137,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="Graphics\objects\base\Cube2.base">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Graphics\objects\base\Diamond.base">
+    <None Include="Graphics\objects\base\Terrain.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Graphics\objects\base\Cube.base">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\base\Diamond.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Graphics\objects\base\Floor.base">
@@ -179,10 +152,16 @@
     <None Include="Graphics\objects\base\Man.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Graphics\objects\material\Terrain.mtl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Graphics\objects\material\Skin.mtl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Graphics\objects\material\Cube.mtl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\mesh\Terrain.obj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Graphics\objects\mesh\Cube.obj">
@@ -201,8 +180,18 @@
     <None Include="Graphics\shaders\DiffuseSpecularMtlGamma.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Graphics\shaders\PN.vert">
+    <None Include="Graphics\shaders\PNT.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\textures\floor.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\textures\terrain_tex.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Graphics\objects\textures\terrain_tex.xcf" />
+    <None Include="Graphics\objects\textures\terrain_tex2.dds">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -248,9 +237,6 @@
     <None Include="Graphics\objects\lighting\Cube.light">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Physics\MIConvexHull\MIConvexHull.csproj" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

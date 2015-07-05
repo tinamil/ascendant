@@ -1,4 +1,4 @@
 ﻿newmtl cube
-Kd .8 .8 .8 1 # diffuse color
+Kd .8 0 .8 1 # diffuse color
 Ks 1 .0 .0 1  # specular color
 Ns 0.500      # specular shininess

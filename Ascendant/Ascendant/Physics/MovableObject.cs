@@ -9,123 +9,56 @@ using OpenTK.Graphics.OpenGL4;
 using Ascendant.Graphics.lighting;
 
 namespace Ascendant.Physics {
-    class MovableObject {
-        internal State display ;
-        internal State current ;
-        internal State previous;
+    class MovableObject : GameObject {
 
-        internal Lighting.PointLight pointLight = new Lighting.PointLight();
-        
-        int matNumber;
-        uint vertexBufferObject;
-        uint vertexNormalObject;
-        uint vertexArrayObject;
+        override protected Vector3 scale { get { return myScale; } }
 
-        World world;
-        List<MovableObject> children;
-        MovableObject hierarchichalParent;
+        private Vector3 myScale;
 
-        internal MovableObject(World world, int matNumber, Lighting.PointLight light, List<MovableObject> children, 
-            float size, float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale, 
-            Vector3 angularMomentum, Mesh mesh) {
-            this.world = world;
-            this.children = children;
-            this.matNumber = matNumber;
-            this.pointLight = light;
-            display = previous = current = new State(size, mass, position, momentum, orientation, scale, angularMomentum, mesh, this);
+        BulletSharp.RigidBody rigidBody;
+
+        public override BulletSharp.RigidBody body {
+            get { return rigidBody; }
         }
 
+        internal MovableObject(World world, int matNumber, Lighting.PointLight light, List<MovableObject> children,
+            float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale,
+            Vector3 angularMomentum, Mesh mesh)
+            : base(world, matNumber, light, mesh, children) {
+            this.myScale = scale;
+            Matrix4 Translate = Matrix4.CreateTranslation(position);
+            Matrix4 Rotate = Matrix4.CreateFromQuaternion(orientation);
+            var modelToWorld = Rotate * Translate;
+            var motionState = new BulletSharp.DefaultMotionState(modelToWorld);
 
-        internal void setParent(MovableObject retVal) {
-            this.hierarchichalParent = retVal;
-        }
-
-        internal Matrix4 getParentMatrix() {
-            if (hierarchichalParent != null) {
-                return hierarchichalParent.current.getModelToWorldMatrix();
-            } else {
-                return Matrix4.Identity;
+            var meshInterface = new BulletSharp.TriangleMesh();
+            Vector3[] triangle = new Vector3[3];
+            for (int i = 0; i < mesh.vertices.Length; ++i) {
+                if (i % 3 == 0 && i > 0) {
+                    meshInterface.AddTriangle(triangle[0], triangle[1], triangle[2]);
+                }
+                triangle[i % 3] = mesh.vertices[i];
             }
-        }
+            BulletSharp.ConvexShape tmpConvexShape = new BulletSharp.ConvexTriangleMeshShape(meshInterface);
 
-        /// Update physics state.
-        internal void update(float t, float dt) {
-            previous = current;
-            Derivative.integrate(ref current, t, dt);
-        }
+            //create a hull approximation
+            var hull = new BulletSharp.ShapeHull(tmpConvexShape);
+            float margin = tmpConvexShape.Margin;
+            hull.BuildHull(margin);
+            tmpConvexShape.UserObject = hull;
 
-        internal void lerp(float blend) {
-            display = State.Lerp(previous, current, blend);
-        }
-
-        internal void InitializeOpenGL(int program) {
-            GL.UseProgram(program);
-            LoadBuffers();
-            LoadVertexArray();
-            GL.UseProgram(0);
-        }
-
-        private void LoadVertexArray() {
-            GL.GenVertexArrays(1, out vertexArrayObject);
-            GL.BindVertexArray(vertexArrayObject);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, 0);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexNormalObject);
-            GL.EnableVertexAttribArray(1);
-            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, true, 0, 0);
-
-            GL.BindVertexArray(0);
-        }
-
-        internal void LoadBuffers() {
-            GL.GenBuffers(1, out vertexBufferObject);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, new IntPtr((display.mesh.vertices.Length * Vector3.SizeInBytes)), display.mesh.vertices, BufferUsageHint.StaticDraw);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-
-            GL.GenBuffers(1, out vertexNormalObject);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexNormalObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, new IntPtr((display.mesh.normals.Length * Vector3.SizeInBytes)), display.mesh.normals, BufferUsageHint.StaticDraw);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-        }
-
-        internal void Render() {
-            GL.BindVertexArray(vertexArrayObject);
-
-            //Translate
-            Matrix4 ModelToWorldMatrix = display.getModelToWorldMatrix();
-
-            Matrix4 ModelToCameraMatrix = ModelToWorldMatrix * world.parentGame.Camera.GetWorldToCameraMatrix();
-            GL.UniformMatrix4(world.modelToCameraMatrixUnif, false, ref ModelToCameraMatrix);
-            Matrix3 NormalModelToCameraMatrix = new Matrix3(ModelToCameraMatrix);
-            if (NormalModelToCameraMatrix.Determinant != 0) {
-                NormalModelToCameraMatrix.Invert();
-            }
-            GL.UniformMatrix3(world.normalModelToCameraMatrixUnif, true, ref NormalModelToCameraMatrix);
-
-            GL.BindBufferRange(BufferRangeTarget.UniformBuffer,
-                Window.g_materialBlockIndex,
-                MaterialLoader.g_materialUniformBuffer,
-               new IntPtr((MaterialLoader.m_sizeMaterialBlock * matNumber)),
-               new IntPtr((MaterialLoader.m_sizeMaterialBlock)));
-
-            //Draw this
-            GL.DrawArrays(display.mesh.type, 0, display.mesh.vertices.Length);
-
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, Window.g_materialBlockIndex, 0);
-
-            GL.BindVertexArray(0);
-
-            //Draw children
-            foreach (MovableObject child in children) {
-                child.Render();
+            var convexShape = new BulletSharp.ConvexHullShape();
+            foreach (Vector3 v in hull.Vertices) {
+                convexShape.AddPoint(v);
             }
 
+            convexShape.LocalScaling = scale;
+
+            var constructionInfo = new BulletSharp.RigidBodyConstructionInfo(mass, motionState, convexShape);
+            rigidBody = new BulletSharp.RigidBody(constructionInfo);
+
+            rigidBody.AngularVelocity = angularMomentum;
+            rigidBody.LinearVelocity = momentum;
         }
     }
 }

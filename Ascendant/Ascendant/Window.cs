@@ -19,6 +19,7 @@ namespace Ascendant.Graphics {
         public const int g_materialBlockIndex = 0;
         public const int g_lightBlockIndex = 1;
         public const int g_pointLightBlockIndex = 2;
+        public const int g_colorTexUnit = 0;
 
         protected void LoadWindow(object sender, EventArgs e) {
             GL.Enable(EnableCap.CullFace);

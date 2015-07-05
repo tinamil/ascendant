@@ -41,7 +41,7 @@ namespace Ascendant {
 
         private void InitalizeOpenGL() {
             var shaderList = new List<int>();
-            shaderList.Add(Framework.LoadShader(ShaderType.VertexShader, @"Graphics\shaders\PN.vert"));
+            shaderList.Add(Framework.LoadShader(ShaderType.VertexShader, @"Graphics\shaders\PNT.vert"));
             shaderList.Add(Framework.LoadShader(ShaderType.FragmentShader, @"Graphics\shaders\DiffuseSpecularMtlGamma.frag"));
 
             gameProgram = Framework.CreateProgram(shaderList);

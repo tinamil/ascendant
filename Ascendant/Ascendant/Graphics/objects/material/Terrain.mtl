@@ -1,0 +1,4 @@
+﻿newmtl Terrain
+Kd 0  0  0 0  # diffuse color
+Ks 1 .0 .0 1  # specular color
+Ns 0.500      # specular shininess

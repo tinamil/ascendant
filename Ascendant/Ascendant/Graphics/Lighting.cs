@@ -13,7 +13,7 @@ namespace Ascendant.Graphics.lighting {
     class Lighting {
         uint g_lightUniformBuffer;
         uint g_pointLightUniformBuffer;
-        readonly protected List<MovableObject> worldObjects;
+        readonly protected List<GameObject> worldObjects;
 
         const float halfLightDistance = 70.0f;
         const float gamma = 2.2f;
@@ -23,7 +23,7 @@ namespace Ascendant.Graphics.lighting {
         private Vector4 ambient;
         internal Vector4 background { get; private set; }
 
-        public Lighting(List<MovableObject> objects) {
+        public Lighting(List<GameObject> objects) {
             worldObjects = objects;
         }
 
@@ -80,9 +80,9 @@ namespace Ascendant.Graphics.lighting {
             int objectIndex = 0;
             //Load all the lights from the world up to the maximum (16 by default)
             while (light < PointLight.maxLights && objectIndex < worldObjects.Count) {
-                MovableObject possibleLight = worldObjects[objectIndex++];
+                GameObject possibleLight = worldObjects[objectIndex++];
                 if (possibleLight.pointLight.lightIntensity != Vector4.Zero) {
-                    Vector4 worldLightPos = new Vector4(possibleLight.display.position + possibleLight.pointLight.cameraSpaceLightPos.Xyz, 1.0f);
+                    Vector4 worldLightPos = new Vector4(possibleLight.getPosition() + possibleLight.pointLight.cameraSpaceLightPos.Xyz, 1.0f);
                     Vector4 lightPosCameraSpace = Vector4.Transform(worldLightPos, worldToCameraMat);
 
                     lights[light].cameraSpaceLightPos = lightPosCameraSpace;
@@ -104,7 +104,7 @@ namespace Ascendant.Graphics.lighting {
             lightData.ambientIntensity = ambient;
             lightData.attenuationMaxGamma.X = attenuation;
             lightData.attenuationMaxGamma.Y = maxIntensity;
-            lightData.attenuationMaxGamma.Z = gamma;
+            lightData.attenuationMaxGamma.Z = 1/gamma;
             return lightData;
         }
 
