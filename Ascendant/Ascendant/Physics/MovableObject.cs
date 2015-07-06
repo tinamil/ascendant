@@ -15,7 +15,7 @@ namespace Ascendant.Physics {
 
         private Vector3 myScale;
 
-        BulletSharp.RigidBody rigidBody;
+        protected BulletSharp.RigidBody rigidBody;
 
         public override BulletSharp.RigidBody body {
             get { return rigidBody; }

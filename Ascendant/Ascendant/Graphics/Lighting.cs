@@ -18,7 +18,7 @@ namespace Ascendant.Graphics.lighting {
 
         const float cycleTime = 30;
 
-        static public float Alpha(long millis) { return ((millis / 1000) % cycleTime) / cycleTime; }
+        static public float Alpha(long millis) { return ((millis / 1000f) % cycleTime) / cycleTime; }
 
         static public Vector4 GetSunlightDirection(long millis) {
             float angle = 2.0f * 3.14159f * Alpha(millis);
@@ -165,9 +165,6 @@ namespace Ascendant.Graphics.lighting {
                 GL.BindBuffer(BufferTarget.UniformBuffer, 0);
                 pinnedArray.Free();
             }
-
-            Debug.WriteLine(lightData[1].lightIntensity);
-
             LightBlockGamma data = GetLightInformation(currentMillis);
             GL.BindBuffer(BufferTarget.UniformBuffer, g_lightUniformBuffer);
             GL.BufferData(BufferTarget.UniformBuffer, new IntPtr(Marshal.SizeOf(typeof(LightBlockGamma))), ref data, BufferUsageHint.DynamicDraw);

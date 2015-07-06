@@ -121,6 +121,7 @@
     <Compile Include="Graphics\objects\textures\LoaderDDS.cs" />
     <Compile Include="Graphics\objects\textures\LoaderGDI.cs" />
     <Compile Include="Graphics\objects\textures\LoaderStatics.cs" />
+    <Compile Include="Physics\MultiJointObject.cs" />
     <Compile Include="Physics\StaticObject.cs" />
     <Compile Include="Physics\GameObject.cs" />
     <Compile Include="World.cs" />
@@ -137,6 +138,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <Content Include="Graphics\objects\base\Multijoint.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="Graphics\objects\base\Terrain.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -152,10 +156,10 @@
     <None Include="Graphics\objects\base\Man.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Graphics\objects\lighting\Sun.light">
+    <Content Include="Graphics\objects\lighting\Sunlight.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
-    </None>
+    </Content>
     <None Include="Graphics\objects\material\Terrain.mtl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

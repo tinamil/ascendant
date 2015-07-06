@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<dynamicmodel>
+  <mesh>Diamond.obj</mesh>
+  <material>
+    <file>Diamond.mtl</file>
+    <type>diamond</type>
+  </material>
+  <point_lights>
+    <light>Cube.light</light>
+  </point_lights>
+  <scale>
+    <x>1</x>
+    <y>1</y>
+    <z>1</z>
+  </scale>
+  <position>
+    <x>-1</x>
+    <y>1</y>
+    <z>0</z>
+  </position>
+  <orientation>
+    <x>0</x>
+    <y>1</y>
+    <z>0</z>
+    <degrees>0</degrees>
+  </orientation>
+  <!--<momentum> defaults to zero-->
+  <!--<angular_momentum> defaults to zero-->
+  <child>
+    <model>Cube.xml</model>
+    <conetwist>
+      <swingX>pi/2</swingX>
+      <swingY>pi/2</swingY>
+      <twist>0</twist>
+      <!--Optional-->
+      <!--<softness></softness>
+      <bias></bias>
+      <relaxation></relaxation>-->
+    </conetwist>
+  </child>
+</dynamicmodel>
