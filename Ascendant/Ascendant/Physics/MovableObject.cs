@@ -21,14 +21,15 @@ namespace Ascendant.Physics {
             get { return rigidBody; }
         }
 
-        internal MovableObject(World world, int matNumber, Lighting.PointLight light, List<MovableObject> children,
+        internal MovableObject(World world, int matNumber, List<Lighting.PointLight> lightList, Dictionary<GameObject, ConeTwist> children,
             float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale,
-            Vector3 angularMomentum, Mesh mesh)
-            : base(world, matNumber, light, mesh, children) {
+            Vector3 angularMomentum, Mesh mesh, Matrix4 parentTransform)
+            : base(world, matNumber, lightList, mesh, children.Keys) {
             this.myScale = scale;
+            Matrix4 Scale = Matrix4.CreateScale(scale);
             Matrix4 Translate = Matrix4.CreateTranslation(position);
             Matrix4 Rotate = Matrix4.CreateFromQuaternion(orientation);
-            var modelToWorld = Rotate * Translate;
+            var modelToWorld = parentTransform * Scale * Rotate * Translate;
             var motionState = new BulletSharp.DefaultMotionState(modelToWorld);
 
             var meshInterface = new BulletSharp.TriangleMesh();
@@ -54,11 +55,22 @@ namespace Ascendant.Physics {
 
             convexShape.LocalScaling = scale;
 
-            var constructionInfo = new BulletSharp.RigidBodyConstructionInfo(mass, motionState, convexShape);
+            Vector3 inertia = Vector3.Zero;
+            convexShape.CalculateLocalInertia(mass, out inertia);
+            var constructionInfo = new BulletSharp.RigidBodyConstructionInfo(mass, motionState, convexShape, inertia);
             rigidBody = new BulletSharp.RigidBody(constructionInfo);
 
             rigidBody.AngularVelocity = angularMomentum;
             rigidBody.LinearVelocity = momentum;
+
+            foreach (var childEntry in children) {
+                var child = childEntry.Key;
+                var constraintStruct = childEntry.Value;
+                BulletSharp.ConeTwistConstraint constraint = new BulletSharp.ConeTwistConstraint(rigidBody, child.body, constraintStruct.aFrame, constraintStruct.bFrame);
+                constraint.SetLimit(constraintStruct.swingSpan1, constraintStruct.swingSpan2, constraintStruct.twist, constraintStruct.softness, constraintStruct.bias, constraintStruct.relaxation);
+
+                child.setParent(this, constraint);
+            }
         }
     }
 }

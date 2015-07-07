@@ -111,27 +111,40 @@ namespace Ascendant.Graphics.lighting {
             internal Vector4 attenuationMaxGamma;
         }
 
+        private IEnumerable<PointLight> loadObjectPointLights(GameObject obj, Matrix4 worldToCameraMat) {
+            var lights = new List<PointLight>();
+            foreach (Lighting.PointLight pointLight in obj.pointLights) {
+                if (pointLight.lightIntensity != Vector4.Zero) {
+                    Vector4 worldLightPos = new Vector4(obj.getPosition() + pointLight.cameraSpaceLightPos.Xyz, 1.0f);
+                    Vector4 lightPosCameraSpace = Vector4.Transform(worldLightPos, worldToCameraMat);
+
+                    PointLight light = new PointLight();
+                    light.cameraSpaceLightPos = lightPosCameraSpace;
+                    light.lightIntensity = pointLight.lightIntensity;
+                    lights.Add(light);
+                }
+            }
+            return lights;
+        }
+
         internal PointLight[] GetPointLights(Matrix4 worldToCameraMat, long currentMillis) {
             PointLight[] lights = new PointLight[PointLight.maxLights];
             int light = 0;
             int objectIndex = 0;
             //Load all the lights from the world up to the maximum (16 by default)
-            while (light < PointLight.maxLights && objectIndex < worldObjects.Count) {
-                GameObject possibleLight = worldObjects[objectIndex++];
-                if (possibleLight.pointLight.lightIntensity != Vector4.Zero) {
-                    Vector4 worldLightPos = new Vector4(possibleLight.getPosition() + possibleLight.pointLight.cameraSpaceLightPos.Xyz, 1.0f);
-                    Vector4 lightPosCameraSpace = Vector4.Transform(worldLightPos, worldToCameraMat);
-
-                    lights[light].cameraSpaceLightPos = lightPosCameraSpace;
-                    lights[light].lightIntensity = possibleLight.pointLight.lightIntensity;
-                    light += 1;
-                }
-            }
             if (light < PointLight.maxLights) {
                 Vector4 sunPos = new Vector4(Vector4.Transform(Sun.GetSunlightDirection(currentMillis), worldToCameraMat));
                 lights[light].cameraSpaceLightPos = sunPos;
                 lights[light].lightIntensity = sunTimer.Interpolate(Sun.Alpha(currentMillis)).intensity;
                 light += 1;
+            }
+            while (light < PointLight.maxLights && objectIndex < worldObjects.Count) {
+                GameObject possibleLight = worldObjects[objectIndex++];
+                var allLights = loadObjectPointLights(possibleLight, worldToCameraMat);
+                foreach (PointLight pointLight in allLights) {
+                    lights[light++] = pointLight;
+                    if (light >= PointLight.maxLights) break;
+                }
             }
             //Fill the rest of the light array with Zero vectors to prevent garbage memory from being interpreted as lights
             while (light < PointLight.maxLights) {

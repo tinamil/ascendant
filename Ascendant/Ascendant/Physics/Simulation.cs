@@ -27,19 +27,27 @@ namespace Ascendant.Physics {
             CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);
 
             // The actual physics solver
-            ConstraintSolver solver = new BulletSharp.SequentialImpulseConstraintSolver();
+            ConstraintSolver solver = new BulletSharp.NncgConstraintSolver();
 
             // The world.
-            dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
-            dynamicsWorld.Gravity = new Vector3(0, -9.8f, 0);
+            dynamicsWorld = new BulletSharp.SoftBody.SoftRigidDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+            //dynamicsWorld.Gravity = new Vector3(0, 0f, 0);
 
             foreach (GameObject obj in objects) {
-                dynamicsWorld.AddRigidBody(obj.body);
+                addObjToPhysics(dynamicsWorld, obj);
             }
             dynamicsWorld.SolverInfo.RestingContactRestitutionThreshold = 5;
             dynamicsWorld.SolverInfo.SplitImpulse = 1;
             dynamicsWorld.SolverInfo.SplitImpulsePenetrationThreshold = -0.02f;
             dynamicsWorld.SolverInfo.NumIterations = 20;
+        }
+
+        private void addObjToPhysics(DiscreteDynamicsWorld dynamicsWorld, GameObject obj) {
+            dynamicsWorld.AddRigidBody(obj.body);
+            if (obj.constraint != null) dynamicsWorld.AddConstraint(obj.constraint);
+            foreach (GameObject child in obj.children) {
+                addObjToPhysics(dynamicsWorld, child);
+            }
         }
 
         const float dt = 0.005f;
@@ -51,7 +59,6 @@ namespace Ascendant.Physics {
             if (frameTime > .250) frameTime = .250f;
             if (frameTime < 0) return;
             prevTime = newTime;
-
             dynamicsWorld.StepSimulation(frameTime, 10, dt);
 
             //      int numManifolds = dynamicsWorld.Dispatcher.NumManifolds;

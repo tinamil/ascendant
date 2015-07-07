@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<model type="dynamic">
+  <mesh>Cube.obj</mesh>
+  <material>
+    <file>Cube.mtl</file>
+    <type>cube</type>
+  </material>
+  <point_lights>
+    <light>Cube.light</light>
+  </point_lights>
+  <scale>
+    <x>.5</x>
+    <y>.5</y>
+    <z>.5</z>
+  </scale>
+  <position>
+    <x>0</x>
+    <y>20</y>
+    <z>0</z>
+  </position>
+  <mass>5</mass>
+  <!--<momentum> defaults to zero-->
+  <!--<angular_momentum> defaults to zero-->
+</model>

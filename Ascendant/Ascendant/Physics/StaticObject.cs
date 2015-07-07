@@ -20,7 +20,7 @@ namespace Ascendant.Physics {
             get { return rigidBody; }
         }
 
-        internal StaticObject(World world, int matNumber, Lighting.PointLight light, List<StaticObject> children,
+        internal StaticObject(World world, int matNumber, List<Lighting.PointLight> light, List<StaticObject> children,
             Vector3 position, Quaternion orientation, Vector3 scale, Mesh mesh)
             : base(world, matNumber, light, mesh, children) {
             this.myScale = scale;
@@ -45,6 +45,10 @@ namespace Ascendant.Physics {
 
             var constructionInfo = new BulletSharp.RigidBodyConstructionInfo(0, motionState, convexShape);
             rigidBody = new BulletSharp.RigidBody(constructionInfo);
+
+            foreach (var dictEntry in children) {
+                dictEntry.setParent(this, null);
+            }
         }
     }
 }

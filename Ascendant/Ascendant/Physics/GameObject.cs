@@ -7,10 +7,11 @@ using OpenTK;
 using Ascendant.Graphics.objects;
 using OpenTK.Graphics.OpenGL4;
 using Ascendant.Graphics.lighting;
+using System.Diagnostics;
 
 namespace Ascendant.Physics {
-   abstract class GameObject {
-        internal Lighting.PointLight pointLight = new Lighting.PointLight();
+    abstract class GameObject {
+        internal List<Lighting.PointLight> pointLights = new List<Lighting.PointLight>();
 
         int matNumber;
         uint vertexBufferObject;
@@ -19,27 +20,27 @@ namespace Ascendant.Physics {
         uint vertexArrayObject;
 
         bool hasTexture { get { return mesh.texCoords.Length > 0; } }
-        uint g_sampler; 
+        uint g_sampler;
         uint g_linearTexture;
         TextureTarget textureType;
 
         World world;
-        IEnumerable<GameObject> children;
+        internal IEnumerable<GameObject> children;
         GameObject hierarchichalParent;
 
         String textureFile;
-        internal Matrix4 cachedTransform;
         internal MovableObject parent;
         internal Mesh mesh;
         public abstract BulletSharp.RigidBody body { get; }
+        public BulletSharp.TypedConstraint constraint { get; private set; }
         protected abstract Vector3 scale { get; }
-        
 
-        internal GameObject(World world, int matNumber, Lighting.PointLight light, Mesh mesh, IEnumerable<GameObject> children) {
+
+        internal GameObject(World world, int matNumber, List<Lighting.PointLight> light, Mesh mesh, IEnumerable<GameObject> children) {
 
             this.world = world;
             this.matNumber = matNumber;
-            this.pointLight = light;
+            this.pointLights = light;
             this.textureFile = mesh.textureFile;
             this.children = children;
             this.mesh = mesh;
@@ -60,9 +61,10 @@ namespace Ascendant.Physics {
         internal Vector3 getPosition() {
             return body.MotionState.WorldTransform.ExtractTranslation();
         }
-
-        internal void setParent(GameObject retVal) {
-            this.hierarchichalParent = retVal;
+        
+        internal void setParent(GameObject parent, BulletSharp.TypedConstraint constraint) {
+            this.hierarchichalParent = parent;
+            this.constraint = constraint;
         }
 
         internal Matrix4 getParentMatrix() {
@@ -84,6 +86,10 @@ namespace Ascendant.Physics {
 
                 LoadTextures();
                 CreateSamplers();
+            }
+
+            foreach (GameObject child in children) {
+                child.InitializeOpenGL(program);
             }
 
             GL.UseProgram(0);
@@ -165,7 +171,7 @@ namespace Ascendant.Physics {
                 NormalModelToCameraMatrix.Invert();
             }
 
-            GL.UniformMatrix3(world.normalModelToCameraMatrixUnif, true, ref NormalModelToCameraMatrix);
+            GL.UniformMatrix3(world.normalModelToCameraMatrixUnif, false, ref NormalModelToCameraMatrix);
 
             GL.BindBufferRange(BufferRangeTarget.UniformBuffer,
                 Window.g_materialBlockIndex,
@@ -193,10 +199,11 @@ namespace Ascendant.Physics {
             GL.BindVertexArray(0);
 
             //Draw children
-            foreach (MovableObject child in children) {
+            foreach (GameObject child in children) {
                 child.Render();
             }
 
         }
+
     }
 }

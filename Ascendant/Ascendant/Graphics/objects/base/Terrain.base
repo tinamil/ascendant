@@ -1,7 +1,7 @@
 ﻿mesh Terrain.obj
 
 scale 1 1 1
-position 0 1 0
+position 0 -20 0
 orientation -1 0 0 90 
 mass 5 #kg
 momentum 0 0 0

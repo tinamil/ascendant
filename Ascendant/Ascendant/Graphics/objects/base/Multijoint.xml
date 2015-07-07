@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<dynamicmodel>
+<model type="dynamic">
   <mesh>Diamond.obj</mesh>
   <material>
     <file>Diamond.mtl</file>
@@ -24,18 +24,48 @@
     <z>0</z>
     <degrees>0</degrees>
   </orientation>
+  <mass>5</mass>
   <!--<momentum> defaults to zero-->
   <!--<angular_momentum> defaults to zero-->
-  <child>
-    <model>Cube.xml</model>
-    <conetwist>
-      <swingX>pi/2</swingX>
-      <swingY>pi/2</swingY>
-      <twist>0</twist>
-      <!--Optional-->
-      <!--<softness></softness>
-      <bias></bias>
-      <relaxation></relaxation>-->
-    </conetwist>
-  </child>
-</dynamicmodel>
+  <children>
+    <child>
+      <model>Cube.xml</model>
+      <constraint type="conetwist">
+        <swingX>90</swingX>
+        <swingY>90</swingY>
+        <twist>0</twist>
+        <!--Optional-->
+        <!--<softness></softness>
+        <bias></bias>
+        <relaxation></relaxation>-->
+
+        <referenceParent>
+          <position>
+            <x>-1</x>
+            <y>1</y>
+            <z>0</z>
+          </position>
+          <orientation>
+            <x>0</x>
+            <y>1</y>
+            <z>0</z>
+            <degrees>0</degrees>
+          </orientation>
+        </referenceParent>
+        <referenceChild>
+          <position>
+            <x>1</x>
+            <y>0</y>
+            <z>0</z>
+          </position>
+          <orientation>
+            <x>1</x>
+            <y>1</y>
+            <z>1</z>
+            <degrees>0</degrees>
+          </orientation>
+        </referenceChild>
+      </constraint>
+    </child>
+  </children>
+</model>
