@@ -136,8 +136,67 @@ namespace Ascendant.Graphics.objects {
 
         private void addMultiBodyObject(MultiBodyObject obj) {
             physicsWorld.AddMultiBody(obj.mBody);
+            addColliders(obj);
+        }
+
+        private void addColliders(MultiBodyObject obj) {
+            MultiBody mBody = obj.mBody;
+            Joint[] links = obj.generateLinks();
+            Quaternion[] world_to_local = new Quaternion[mBody.NumLinks + 1];
+
+            var local_origin = new Vector3[mBody.NumLinks + 1];
+
+            world_to_local[0] = mBody.WorldToBaseRot;
+            local_origin[0] = mBody.BasePosition;
+            {
+
+                //	float pos[4]={local_origin[0].x(),local_origin[0].y(),local_origin[0].z(),1};
+                var quat = new float[4] { -world_to_local[0].X, -world_to_local[0].Y, -world_to_local[0].Z, world_to_local[0].W };
 
 
+                if (true) // Base
+                {
+                    var col = new MultiBodyLinkCollider(mBody, -1);
+                    col.CollisionShape = obj.shape;
+
+                    Matrix4 tr = Matrix4.CreateTranslation(local_origin[0]);
+                    tr = tr * Matrix4.CreateFromQuaternion(new Quaternion(quat[0], quat[1], quat[2], quat[3]));
+                    col.WorldTransform = tr;
+
+                    physicsWorld.AddCollisionObject(col, 2, 1 + 2);
+
+                    col.Friction = (1f);
+                    mBody.BaseCollider = col;
+                }
+            }
+
+
+            for (int i = 0; i < mBody.NumLinks; ++i) {
+                int parent = mBody.GetParent(i);
+                world_to_local[i + 1] = mBody.GetParentToLocalRot(i) * world_to_local[parent + 1];
+                local_origin[i + 1] = local_origin[parent + 1] + (Vector3.Transform(mBody.GetRVector(i), world_to_local[i + 1].Inverted()));
+            }
+
+            for (int i = 0; i < mBody.NumLinks; ++i) {
+
+                Vector3 posr = local_origin[i + 1];
+                //	float pos[4]={posr.x(),posr.y(),posr.z(),1};
+
+                var quat = new float[4] { -world_to_local[i + 1].X, -world_to_local[i + 1].Y, -world_to_local[i + 1].Z, world_to_local[i + 1].W };
+
+                CollisionShape box = links[i].link.shape;
+                MultiBodyLinkCollider col = new MultiBodyLinkCollider(mBody, i);
+
+                col.CollisionShape = box;
+                Matrix4 tr = Matrix4.CreateTranslation(posr);
+                tr = tr * Matrix4.CreateFromQuaternion(new Quaternion(quat[0], quat[1], quat[2], quat[3]));
+                col.WorldTransform = tr;
+                col.Friction = (1f);
+                physicsWorld.AddCollisionObject(col, 2, 1 + 2);
+
+
+                mBody.GetLink(i).Collider = col;
+            }
         }
 
         const float dt = 1.0f / 240f;

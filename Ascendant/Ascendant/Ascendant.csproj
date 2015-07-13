@@ -149,7 +149,6 @@
     <Compile Include="World.cs" />
     <Compile Include="Physics\MultiBodyObject.cs" />
     <Compile Include="Window.cs" />
-    <Compile Include="Physics\Simulation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AppConfig.Designer.cs">
