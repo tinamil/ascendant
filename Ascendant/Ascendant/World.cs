@@ -7,11 +7,13 @@ using Ascendant.Physics;
 using Ascendant.Graphics.lighting;
 using OpenTK;
 using System.Diagnostics;
+using BulletSharp;
 
 namespace Ascendant.Graphics.objects {
     class World {
         readonly protected List<GameObject> children = new List<GameObject>();
-        protected Physics.Simulation sim;
+
+        protected MultiBodyDynamicsWorld physicsWorld;
         internal protected Lighting lights;
 
         readonly Stopwatch timer = Stopwatch.StartNew();
@@ -48,7 +50,6 @@ namespace Ascendant.Graphics.objects {
             foreach (GameObject obj in children) {
                 obj.Render();
             }
-
         }
 
 
@@ -71,7 +72,7 @@ namespace Ascendant.Graphics.objects {
         }
         internal void Update() {
             if (timer.IsRunning) {
-                sim.RunSim(timer.ElapsedMilliseconds);
+                RunSim(timer.ElapsedMilliseconds);
             }
         }
 
@@ -82,8 +83,6 @@ namespace Ascendant.Graphics.objects {
 
         internal void addRootObjects(List<GameObject> newObjects) {
             this.children.AddRange(newObjects);
-
-            sim = new Simulation(children);
             lights = new Lighting(children);
         }
 
@@ -92,7 +91,82 @@ namespace Ascendant.Graphics.objects {
         }
 
         internal Vector4 getBackgroundColor() {
-            return lights.sunTimer.Interpolate(Sun.Alpha(timer.ElapsedMilliseconds)).background; 
+            return lights.sunTimer.Interpolate(Sun.Alpha(timer.ElapsedMilliseconds)).background;
+        }
+
+        public void setupSimulation() {
+            BroadphaseInterface broadphase = new DbvtBroadphase();
+
+            // Set up the collision configuration and dispatcher
+            CollisionConfiguration collisionConfiguration = new DefaultCollisionConfiguration();
+            CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);
+
+            // The actual physics solver
+            MultiBodyConstraintSolver solver = new BulletSharp.MultiBodyConstraintSolver();
+
+            // The world.
+            physicsWorld = new BulletSharp.MultiBodyDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+            //dynamicsWorld.Gravity = new Vector3(0, 0f, 0);
+
+            foreach (GameObject obj in children) {
+                var mObj = obj as MultiBodyObject;
+                if (mObj != null) {
+                    addMultiBodyObject(mObj);
+                }
+                var rObj = obj as RigidBodyObject;
+                if (rObj != null) {
+                    addObjToPhysics(rObj);
+                }
+            }
+
+            physicsWorld.SolverInfo.RestingContactRestitutionThreshold = 5;
+            physicsWorld.SolverInfo.SplitImpulse = 1;
+            physicsWorld.SolverInfo.SplitImpulsePenetrationThreshold = -0.02f;
+            physicsWorld.SolverInfo.NumIterations = 20;
+        }
+
+        private void addObjToPhysics(RigidBodyObject obj) {
+            physicsWorld.AddRigidBody(obj.rigidBody);
+
+            if (obj.constraint != null) physicsWorld.AddConstraint(obj.constraint);
+            foreach (RigidBodyObject child in obj.children) {
+                addObjToPhysics(child);
+            }
+        }
+
+        private void addMultiBodyObject(MultiBodyObject obj) {
+            physicsWorld.AddMultiBody(obj.mBody);
+
+
+        }
+
+        const float dt = 1.0f / 240f;
+        float prevTime = 0;
+        public void RunSim(long elapsedMillis) {
+
+            float newTime = elapsedMillis / 1000.0f;
+            float frameTime = newTime - prevTime;
+            if (frameTime > .250) frameTime = .250f;
+            if (frameTime < 0) return;
+            prevTime = newTime;
+            checkForce();
+            physicsWorld.StepSimulation(frameTime, 10, dt);
+
+            //      int numManifolds = dynamicsWorld.Dispatcher.NumManifolds;
+            //      for (int i=0;i<numManifolds;i++) {
+            //  PersistentManifold contactManifold =  dynamicsWorld.Dispatcher.GetManifoldByIndexInternal(i);
+            //CollisionObject obA = contactManifold.Body0;
+            //  CollisionObject obB = contactManifold.Body1;
+            //      }
+        }
+
+        private void checkForce() {
+            //if (parentGame.pressedKeys.Contains(OpenTK.Input.Key.J)) objects.Last().body.ApplyCentralForce(Vector3.UnitX);
+            //if (parentGame.pressedKeys.Contains(OpenTK.Input.Key.L)) objects.Last().body.ApplyCentralForce(-Vector3.UnitX);
+            //if (parentGame.pressedKeys.Contains(OpenTK.Input.Key.K)) objects.Last().body.ApplyCentralForce(-Vector3.UnitY);
+            //if (parentGame.pressedKeys.Contains(OpenTK.Input.Key.I)) objects.Last().body.ApplyCentralForce(Vector3.UnitY);
+            //if (parentGame.pressedKeys.Contains(OpenTK.Input.Key.U)) objects.Last().body.ApplyCentralForce(Vector3.UnitZ);
+            //if (parentGame.pressedKeys.Contains(OpenTK.Input.Key.O)) objects.Last().body.ApplyCentralForce(-Vector3.UnitZ);
         }
     }
 }

@@ -29,12 +29,9 @@ namespace Ascendant.Physics {
         GameObject hierarchichalParent;
 
         String textureFile;
-        internal MovableObject parent;
         internal Mesh mesh;
-        public abstract BulletSharp.RigidBody body { get; }
-        public BulletSharp.TypedConstraint constraint { get; private set; }
         protected abstract Vector3 scale { get; }
-
+        protected abstract Matrix4 WorldTransform { get; }
 
         internal GameObject(World world, int matNumber, List<Lighting.PointLight> light, Mesh mesh, IEnumerable<GameObject> children) {
 
@@ -55,16 +52,15 @@ namespace Ascendant.Physics {
             //// return Translate * Rotate * Scale * parentMatrix;
             //cachedTransform = getParentMatrix() * Scale * Rotate * Translate;
             //return cachedTransform;
-            return Matrix4.CreateScale(scale) * body.MotionState.WorldTransform;
+            return Matrix4.CreateScale(scale) * WorldTransform;
         }
 
         internal Vector3 getPosition() {
-            return body.MotionState.WorldTransform.ExtractTranslation();
+            return WorldTransform.ExtractTranslation();
         }
         
-        internal void setParent(GameObject parent, BulletSharp.TypedConstraint constraint) {
+        internal protected void SetParent(GameObject parent) {
             this.hierarchichalParent = parent;
-            this.constraint = constraint;
         }
 
         internal Matrix4 getParentMatrix() {

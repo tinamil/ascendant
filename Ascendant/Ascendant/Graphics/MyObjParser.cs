@@ -289,7 +289,7 @@ namespace Ascendant.Graphics {
                 }
             }
             int matIndex = MaterialLoader.AddMaterial(mat);
-            GameObject obj = new MovableObject(world, matIndex, lightList, children, mass, position, momentum, orientation, scale, angularMomentum, mesh, parentTransform);
+            GameObject obj = new RigidBodyObject(world, matIndex, lightList, children, mass, position, momentum, orientation, scale, angularMomentum, mesh, parentTransform);
             return obj;
         }
 

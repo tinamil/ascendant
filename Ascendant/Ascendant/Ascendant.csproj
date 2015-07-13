@@ -91,7 +91,7 @@
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BulletSharp, Version=2.83.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="BulletSharp, Version=2.83.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>.\BulletSharp.dll</HintPath>
     </Reference>
@@ -122,10 +122,32 @@
     <Compile Include="Graphics\objects\textures\LoaderGDI.cs" />
     <Compile Include="Graphics\objects\textures\LoaderStatics.cs" />
     <Compile Include="Physics\Constraint.cs" />
+    <Compile Include="Physics\RigidBodyObject.cs" />
     <Compile Include="Physics\StaticObject.cs" />
     <Compile Include="Physics\GameObject.cs" />
+    <Compile Include="QuickFont\Builder.cs" />
+    <Compile Include="QuickFont\Configuration\QFontBuilderConfiguration.cs" />
+    <Compile Include="QuickFont\Configuration\QFontConfiguration.cs" />
+    <Compile Include="QuickFont\Configuration\QFontKerningConfiguration.cs" />
+    <Compile Include="QuickFont\Configuration\QFontLoaderConfiguration.cs" />
+    <Compile Include="QuickFont\Configuration\QFontShadowConfiguration.cs" />
+    <Compile Include="QuickFont\Helper.cs" />
+    <Compile Include="QuickFont\JBitmap.cs" />
+    <Compile Include="QuickFont\JMath.cs" />
+    <Compile Include="QuickFont\JTexture.cs" />
+    <Compile Include="QuickFont\JTextureManager.cs" />
+    <Compile Include="QuickFont\KerningCalculator.cs" />
+    <Compile Include="QuickFont\ProjectionStack.cs" />
+    <Compile Include="QuickFont\QBitmap.cs" />
+    <Compile Include="QuickFont\QFont.cs" />
+    <Compile Include="QuickFont\QFontData.cs" />
+    <Compile Include="QuickFont\QFontGlyph.cs" />
+    <Compile Include="QuickFont\QFontRenderOptions.cs" />
+    <Compile Include="QuickFont\QVertexBuffer.cs" />
+    <Compile Include="QuickFont\TextNodeList.cs" />
+    <Compile Include="QuickFont\TexturePage.cs" />
     <Compile Include="World.cs" />
-    <Compile Include="Physics\MovableObject.cs" />
+    <Compile Include="Physics\MultiBodyObject.cs" />
     <Compile Include="Window.cs" />
     <Compile Include="Physics\Simulation.cs" />
     <Compile Include="Program.cs" />
@@ -137,12 +159,14 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="QuickFont\ChangeLog.txt" />
     <None Include="app.config" />
     <Content Include="Graphics\objects\base\Multijoint.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Graphics\objects\base\Cube.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
     <None Include="Graphics\objects\base\Terrain.base">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

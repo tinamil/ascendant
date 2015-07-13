@@ -16,8 +16,8 @@ namespace Ascendant.Physics {
         private BulletSharp.RigidBody rigidBody;
 
         override protected Vector3 scale { get { return myScale; } }
-        public override BulletSharp.RigidBody body {
-            get { return rigidBody; }
+        protected override Matrix4 WorldTransform {
+            get { return rigidBody.MotionState.WorldTransform; }
         }
 
         internal StaticObject(World world, int matNumber, List<Lighting.PointLight> light, List<StaticObject> children,
@@ -47,7 +47,7 @@ namespace Ascendant.Physics {
             rigidBody = new BulletSharp.RigidBody(constructionInfo);
 
             foreach (var dictEntry in children) {
-                dictEntry.setParent(this, null);
+                dictEntry.SetParent(this);
             }
         }
     }

@@ -23,8 +23,8 @@ namespace Ascendant {
 
         World world;
 
-        ISet<Key> pressedKeys = new HashSet<Key>();
-        ISet<MouseButton> pressedMouseButton = new HashSet<MouseButton>();
+        internal readonly ISet<Key> pressedKeys = new HashSet<Key>();
+        internal readonly ISet<MouseButton> pressedMouseButton = new HashSet<MouseButton>();
         MouseState previous; //Used for detecting if the mouse has moved from frame to frame
 
         public Game(Window window) {
