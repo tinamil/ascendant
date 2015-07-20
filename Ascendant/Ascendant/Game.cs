@@ -14,7 +14,6 @@ using Ascendant.Graphics;
 
 namespace Ascendant {
     class Game {
-        protected internal ICamera Camera = new FirstPersonCamera();
         protected internal Window window;
 
         internal int gameProgram;
@@ -23,20 +22,11 @@ namespace Ascendant {
 
         World world;
 
-        internal readonly ISet<Key> pressedKeys = new HashSet<Key>();
-        internal readonly ISet<MouseButton> pressedMouseButton = new HashSet<MouseButton>();
-        MouseState previous; //Used for detecting if the mouse has moved from frame to frame
-
         public Game(Window window) {
             this.window = window;
-            window.KeyDown += Keyboard_KeyDown;
-            window.KeyUp += Keyboard_KeyUp;
             window.UpdateFrame += Update;
-            window.MouseDown += Mouse_ButtonDown;
-            window.MouseUp += Mouse_ButtonUp;
             window.Load += GameLoad;
             world = MyParser.parseWorld(this, "world1.wor");
-            InitalizeOpenGL();
         }
 
         private void InitalizeOpenGL() {
@@ -52,80 +42,15 @@ namespace Ascendant {
         }
 
 
-        protected void Keyboard_KeyDown(object sender, KeyboardKeyEventArgs e) {
-            if (e.Keyboard.IsKeyDown(Key.Escape)) {
-                window.Exit();
-            }
-            pressedKeys.Add(e.Key);
-        }
-
-        protected void Keyboard_KeyUp(object sender, KeyboardKeyEventArgs e) {
-            pressedKeys.Remove(e.Key);
-        }
-
-        protected void Mouse_ButtonDown(object sender, MouseButtonEventArgs e) {
-            pressedMouseButton.Add(e.Button);
-            if (e.Button == MouseButton.Left) {
-                window.CursorVisible = false;
-                previous = Mouse.GetState();
-            }
-        }
-
-        protected void Mouse_ButtonUp(object sender, MouseButtonEventArgs e) {
-            pressedMouseButton.Remove(e.Button);
-            if (e.Button == MouseButton.Left) {
-                window.CursorVisible = true;
-            }
-        }
-
         public void Update(object o, EventArgs e) {
-            MouseMove();
-            CameraMove();
             Debug.WriteLine("Render frequency: " + window.RenderFrequency);
             world.Update();
-        }
-
-        private void CameraMove() {
-            Vector3 movement = Vector3.Zero;
-            if (pressedKeys.Contains(Key.W)) {
-                movement.Y += .1f;
-            }
-            if (pressedKeys.Contains(Key.A)) {
-                movement.X += -.1f;
-            }
-            if (pressedKeys.Contains(Key.S)) {
-                movement.Y += -.1f;
-            }
-            if (pressedKeys.Contains(Key.D)) {
-                movement.X += .1f;
-            }
-            if (pressedKeys.Contains(Key.LShift)) {
-                movement.Z += .1f;
-            }
-            if (pressedKeys.Contains(Key.LControl)) {
-                movement.Z -= .1f;
-            }
-            Camera.Move(movement);
         }
 
         public void Render() {
             GL.UseProgram(gameProgram);
             world.Render();
             GL.UseProgram(0);
-        }
-
-        protected void ResetCursor() {
-            OpenTK.Input.Mouse.SetPosition(window.Bounds.Left + window.Bounds.Width / 2, window.Bounds.Top + window.Bounds.Height / 2);
-            previous = Mouse.GetState();
-        }
-
-        protected void MouseMove() {
-            var current = Mouse.GetState();
-            if (current != previous && window.Focused && pressedMouseButton.Contains(MouseButton.Left)) {
-                Vector2 delta = new Vector2(current.X - previous.X, current.Y - previous.Y);
-                Camera.Rotate(delta);
-                ResetCursor();
-            }
         }
 
         internal void Resize() {
@@ -136,7 +61,7 @@ namespace Ascendant {
         }
 
         internal void GameLoad(object o, EventArgs e) {
-
+            InitalizeOpenGL();
         }
 
         internal Vector4 getBackground() {

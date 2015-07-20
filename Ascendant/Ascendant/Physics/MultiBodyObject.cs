@@ -19,9 +19,6 @@ namespace Ascendant.Physics {
         }
 
         //All
-        public int linkIndex;
-        public float mass;
-        public int parent;
         public Quaternion rotParentToThis;
         public Vector3 parentComToThisPivotOffset;
         public bool disableParentCollision;
@@ -33,33 +30,40 @@ namespace Ascendant.Physics {
         public Vector3 movementAxis;
     }
 
-    class MultiBodyPart {
+    class MultiBodyPart : DisplayObject {
         readonly public List<Joint> children = new List<Joint>();
-        public GameObject part { get; set; }
-        public CollisionShape shape { get; set; }
+        public MultiBodyLinkCollider shape { get; private set; }
+        public float mass { get; private set; }
+
+        public override Matrix4 ModelToWorld {
+            get { return shape.WorldTransform; }
+        }
+
+        public MultiBodyPart(List<Joint> children, CollisionShape shape, float mass, int matNumber, List<Lighting.PointLight> lightList, Mesh mesh)
+            : base(matNumber, lightList, mesh) {
+                this.children.AddRange(children);
+        }
     }
 
-    class MultiBodyObject : GameObject {
-
-        override protected Vector3 scale { get { return myScale; } }
-
+    class MultiBodyObject : DisplayObject {
+        
         private Vector3 myScale;
 
         public MultiBody mBody { get; private set; }
         public ConvexHullShape shape { get; private set; }
 
-        protected override Matrix4 WorldTransform {
+        public override Matrix4 ModelToWorld {
             get { return mBody.BaseCollider.WorldTransform; }
         }
 
-        List<Joint> children;
+        List<Joint> mBodyChildren;
 
         internal MultiBodyObject(World world, bool isBase, int matNumber, List<Lighting.PointLight> lightList, List<Joint> children,
             float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale,
             Vector3 angularMomentum, Mesh mesh, Matrix4 parentTransform)
-            : base(world, matNumber, lightList, mesh, new List<GameObject>()) {
+            : base(matNumber, lightList, mesh) {
             this.myScale = scale;
-            this.children = children;
+            this.mBodyChildren = children;
             Matrix4 Scale = Matrix4.CreateScale(scale);
             Matrix4 Translate = Matrix4.CreateTranslation(position);
             Matrix4 Rotate = Matrix4.CreateFromQuaternion(orientation);
@@ -94,50 +98,58 @@ namespace Ascendant.Physics {
 
             bool IsFixedBase = false;
             bool CanSleep = true;
-            bool IsMultiDoF = true;
+            bool IsMultiDoF = false;
             mBody = new BulletSharp.MultiBody(children.Count, mass, inertia, IsFixedBase, CanSleep, IsMultiDoF);
 
             mBody.BasePosition = position;
             mBody.WorldToBaseRot = orientation;
-            if (momentum != Vector3.Zero) mBody.BaseVelocity = momentum;
+            //mBody.BaseVelocity = momentum;
+
+            mBody.CanSleep = true;
+            mBody.HasSelfCollision = true;
+            mBody.UseGyroTerm = true;
+            mBody.LinearDamping = 0f;
+            mBody.AngularDamping = 0f;
 
             int baseIndex = -1;
             int jointIndex = 0;
             foreach (var joint in children) {
                 setupJoint(baseIndex, ref jointIndex, joint);
             }
+
         }
 
         private void setupJoint(int parentIndex, ref int jointIndex, Joint joint) {
-            joint.link.part.SetParent(this);
-
-            float linkMass = joint.mass == 0 ? 0.0001f : joint.mass;
+            float linkMass = joint.link.mass == 0 ? 0.0001f : joint.link.mass;
 
             Vector3 linkInertiaDiag;
             joint.link.shape.CalculateLocalInertia(linkMass, out linkInertiaDiag);
             switch (joint.type) {
                 case Joint.Type.Fixed:
-                    mBody.SetupFixed(jointIndex, joint.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset, joint.disableParentCollision);
+                    mBody.SetupFixed(jointIndex, joint.link.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset, joint.disableParentCollision);
                     break;
                 case Joint.Type.Planar:
-                    mBody.SetupPlanar(jointIndex, joint.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.parentComToThisPivotOffset);
+                    mBody.SetupPlanar(jointIndex, joint.link.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.parentComToThisPivotOffset);
                     break;
                 case Joint.Type.Prismatic:
-                    mBody.SetupPrismatic(jointIndex, joint.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset, joint.disableParentCollision);
+                    mBody.SetupPrismatic(jointIndex, joint.link.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset, joint.disableParentCollision);
                     break;
                 case Joint.Type.Revolute:
-                    mBody.SetupRevolute(jointIndex, joint.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.movementAxis, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset);
+                    mBody.SetupRevolute(jointIndex, joint.link.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.movementAxis, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset);
                     break;
                 case Joint.Type.Spherical:
-                    mBody.SetupSpherical(jointIndex, joint.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset);
+                    mBody.SetupSpherical(jointIndex, joint.link.mass, linkInertiaDiag, parentIndex, joint.rotParentToThis, joint.parentComToThisPivotOffset, joint.thisPivotToThisComOffset);
                     break;
             }
             int thisIndex = jointIndex;
+            mBody.SetJointPos(jointIndex, 0f);
+
             jointIndex += 1;
             foreach (Joint j in joint.link.children) {
                 setupJoint(thisIndex, ref jointIndex, j);
             }
         }
+
         private List<Joint> getChildren(Joint joint) {
             List<Joint> children = joint.link.children;
             foreach (Joint j in children) {
@@ -145,9 +157,10 @@ namespace Ascendant.Physics {
             }
             return children;
         }
+
         internal Joint[] generateLinks() {
-            List<Joint> allChildren = children;
-            foreach (Joint j in allChildren) {
+            List<Joint> allChildren = new List<Joint>(mBodyChildren);
+            foreach (Joint j in mBodyChildren) {
                 allChildren.AddRange(getChildren(j));
             }
             return allChildren.ToArray();

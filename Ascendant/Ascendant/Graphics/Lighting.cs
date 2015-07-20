@@ -9,8 +9,7 @@ using System.Runtime.InteropServices;
 using Ascendant.Physics;
 
 namespace Ascendant.Graphics.lighting {
-
-    struct Sun : ILerpable {
+    public struct Sun : ILerpable {
         public Vector4 ambient;
         public Vector4 background;
         public Vector4 intensity;
@@ -52,10 +51,10 @@ namespace Ascendant.Graphics.lighting {
         }
     }
 
-    class Lighting {
+    public class Lighting {
         uint g_lightUniformBuffer;
         uint g_pointLightUniformBuffer;
-        readonly protected List<GameObject> worldObjects;
+        readonly protected List<DisplayObject> worldObjects;
 
         const float halfLightDistance = 70.0f;
         const float gamma = 2.2f;
@@ -63,8 +62,8 @@ namespace Ascendant.Graphics.lighting {
 
         public TimedLinearInterpolator<Sun> sunTimer { get; private set; }
 
-        public Lighting(List<GameObject> objects) {
-            worldObjects = objects;
+        public Lighting(List<DisplayObject> lightSources) {
+            worldObjects = lightSources;
         }
 
         internal void setSun(TimedLinearInterpolator<Sun> _sunTimer) {
@@ -93,7 +92,7 @@ namespace Ascendant.Graphics.lighting {
             GL.BindBufferBase(BufferRangeTarget.UniformBuffer, Window.g_pointLightBlockIndex, g_pointLightUniformBuffer);
         }
 
-        internal struct PointLight {
+        public struct PointLight {
             public const int maxLights = 16;
             public const int sizeBytes = sizeof(float) * 4 * 2 * maxLights;
             internal Vector4 cameraSpaceLightPos;
@@ -111,11 +110,11 @@ namespace Ascendant.Graphics.lighting {
             internal Vector4 attenuationMaxGamma;
         }
 
-        private IEnumerable<PointLight> loadObjectPointLights(GameObject obj, Matrix4 worldToCameraMat) {
+        private IEnumerable<PointLight> loadObjectPointLights(DisplayObject obj, Matrix4 worldToCameraMat) {
             var lights = new List<PointLight>();
             foreach (Lighting.PointLight pointLight in obj.pointLights) {
                 if (pointLight.lightIntensity != Vector4.Zero) {
-                    Vector4 worldLightPos = new Vector4(obj.getPosition() + pointLight.cameraSpaceLightPos.Xyz, 1.0f);
+                    Vector4 worldLightPos = new Vector4(obj.ModelToWorld.ExtractTranslation() + pointLight.cameraSpaceLightPos.Xyz, 1.0f);
                     Vector4 lightPosCameraSpace = Vector4.Transform(worldLightPos, worldToCameraMat);
 
                     PointLight light = new PointLight();
@@ -139,7 +138,7 @@ namespace Ascendant.Graphics.lighting {
                 light += 1;
             }
             while (light < PointLight.maxLights && objectIndex < worldObjects.Count) {
-                GameObject possibleLight = worldObjects[objectIndex++];
+                DisplayObject possibleLight = worldObjects[objectIndex++];
                 var allLights = loadObjectPointLights(possibleLight, worldToCameraMat);
                 foreach (PointLight pointLight in allLights) {
                     lights[light++] = pointLight;

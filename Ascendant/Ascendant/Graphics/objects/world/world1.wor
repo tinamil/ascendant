@@ -1,4 +1,6 @@
 ﻿static Terrain.base
 #dynamic Cube.base
-object Multijoint.xml
+#rigid Multijoint.xml
+multibody Multibody.xml
+
 sun Sunlight.xml

@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<model type="multibody">
+  <mesh>Diamond.obj</mesh>
+  <material>
+    <file>Diamond.mtl</file>
+    <type>diamond</type>
+  </material>
+  <point_lights>
+    <light>Cube.light</light>
+  </point_lights>
+  <scale>
+    <x>1</x>
+    <y>1</y>
+    <z>1</z>
+  </scale>
+  <position>
+    <x>-1</x>
+    <y>1</y>
+    <z>0</z>
+  </position>
+  <orientation>
+    <x>0</x>
+    <y>1</y>
+    <z>0</z>
+    <degrees>0</degrees>
+  </orientation>
+  <mass>5</mass>
+  <!--<momentum> defaults to zero-->
+  <!--<angular_momentum> defaults to zero-->
+  <limbs>
+    <joint type="Revolute"> <!--Fixed, Planar, Prismatic, Revolute, Spherical-->
+      <!-- 
+      All joints:
+      bool disableParentCollision;
+      MultiBodyPart link; //CollisionShape + Joint Children
+      float mass;
+      Vector3 parentComToThisPivotOffset;
+      Vector3 rotParentToThis;
+      
+      Fixed/Prismatic/Revolute/Spherical:
+      Vector3 thisPivotToThisComOffset;
+      
+      Prismatic/Revolute: 
+      Vector3 axis;
+      -->
+      <model>Cube.xml</model>
+      <parentCollision>true</parentCollision>
+      <parentComToThisPivotOffset>
+        <x>0</x>
+        <y>1</y>
+        <z>0</z>
+      </parentComToThisPivotOffset>
+      <rotParentToThis>
+        <x>0</x>
+        <y>1</y>
+        <z>0</z>
+        <degrees>0</degrees>
+      </rotParentToThis>
+      <thisPivotToThisComOffset>
+        <x>0</x>
+        <y>1</y>
+        <z>0</z>
+      </thisPivotToThisComOffset>
+      <movementAxis>
+        <x>0</x>
+        <y>1</y>
+        <z>0</z>
+      </movementAxis>
+    </joint>
+  </limbs>
+</model>

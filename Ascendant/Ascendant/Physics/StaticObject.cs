@@ -9,21 +9,23 @@ using OpenTK.Graphics.OpenGL4;
 using Ascendant.Graphics.lighting;
 
 namespace Ascendant.Physics {
-    class StaticObject : GameObject {
+    class StaticObject : IRigidBody {
 
 
         private Vector3 myScale;
-        private BulletSharp.RigidBody rigidBody;
+        public override BulletSharp.RigidBody rigidBody { get; protected set; }
+        public override BulletSharp.TypedConstraint constraint { get { return null; } protected set {} }
+        public override IEnumerable<IRigidBody> RChildren { get; protected set; }
 
-        override protected Vector3 scale { get { return myScale; } }
-        protected override Matrix4 WorldTransform {
+        public override Matrix4 ModelToWorld {
             get { return rigidBody.MotionState.WorldTransform; }
         }
 
         internal StaticObject(World world, int matNumber, List<Lighting.PointLight> light, List<StaticObject> children,
             Vector3 position, Quaternion orientation, Vector3 scale, Mesh mesh)
-            : base(world, matNumber, light, mesh, children) {
+            : base(matNumber, light, mesh) {
             this.myScale = scale;
+            this.RChildren = children;
             Matrix4 Translate = Matrix4.CreateTranslation(position);
             Matrix4 Rotate = Matrix4.CreateFromQuaternion(orientation);
             var modelToWorld = Rotate * Translate;
@@ -45,10 +47,6 @@ namespace Ascendant.Physics {
 
             var constructionInfo = new BulletSharp.RigidBodyConstructionInfo(0, motionState, convexShape);
             rigidBody = new BulletSharp.RigidBody(constructionInfo);
-
-            foreach (var dictEntry in children) {
-                dictEntry.SetParent(this);
-            }
         }
     }
 }

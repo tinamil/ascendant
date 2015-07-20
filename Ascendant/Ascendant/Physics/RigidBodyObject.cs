@@ -7,31 +7,30 @@ using Ascendant.Graphics.objects;
 using Ascendant.Graphics.lighting;
 
 namespace Ascendant.Physics {
-    class RigidBodyObject : GameObject{
-        override protected Vector3 scale { get { return myScale; } }
-
+    public class RigidBodyObject : IRigidBody {
         private Vector3 myScale;
 
-        internal protected BulletSharp.RigidBody rigidBody;
+        public override BulletSharp.RigidBody rigidBody { get; protected set; }
 
-        protected override Matrix4 WorldTransform {
+        public override Matrix4 ModelToWorld {
             get { return rigidBody.MotionState.WorldTransform; }
         }
 
-        internal BulletSharp.TypedConstraint constraint;
-
-        internal protected void SetParent(GameObject parent, BulletSharp.TypedConstraint constraint){
-            base.SetParent(parent);
-            var rParent = parent as RigidBodyObject;
-            if (rParent != null) {
-                this.constraint = constraint;
+        public override IEnumerable<IRigidBody> RChildren {
+            get {
+                throw new NotImplementedException();
+            }
+            protected set {
+                throw new NotImplementedException();
             }
         }
 
-        internal RigidBodyObject(World world, int matNumber, List<Lighting.PointLight> lightList, Dictionary<GameObject, ConeTwist> children,
+        public override BulletSharp.TypedConstraint constraint { get; protected set; }
+
+        internal RigidBodyObject(World world, Dictionary<RigidBodyObject, ConeTwist> children,
             float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale,
-            Vector3 angularMomentum, Mesh mesh, Matrix4 parentTransform)
-            : base(world, matNumber, lightList, mesh, children.Keys) {
+            Vector3 angularMomentum, Mesh mesh, Matrix4 parentTransform, int matNumber, List<Lighting.PointLight> lightList)
+            : base(matNumber, lightList, mesh) {
             this.myScale = scale;
             Matrix4 Scale = Matrix4.CreateScale(scale);
             Matrix4 Translate = Matrix4.CreateTranslation(position);
@@ -77,10 +76,7 @@ namespace Ascendant.Physics {
                 if (rChild != null) {
                     BulletSharp.ConeTwistConstraint constraint = new BulletSharp.ConeTwistConstraint(rigidBody, rChild.rigidBody, constraintStruct.aFrame, constraintStruct.bFrame);
                     constraint.SetLimit(constraintStruct.swingSpan1, constraintStruct.swingSpan2, constraintStruct.twist, constraintStruct.softness, constraintStruct.bias, constraintStruct.relaxation);
-
-                    rChild.SetParent(this, constraint);
-                } else {
-                    child.SetParent(this);
+                    rChild.constraint = constraint;
                 }
             }
         }

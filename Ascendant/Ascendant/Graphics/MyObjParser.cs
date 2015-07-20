@@ -20,7 +20,6 @@ namespace Ascendant.Graphics {
         static public World parseWorld(Game game, string filename) {
             StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\world\" + filename);
             string line;
-            var children = new List<GameObject>();
             TimedLinearInterpolator<Sun> sunTimer = null;
             World retVal = new World(game);
             while ((line = reader.ReadLine()) != null) {
@@ -36,12 +35,17 @@ namespace Ascendant.Graphics {
                     case "static":
                         if (items.Length < 2)
                             throw new InvalidDataException("Not enough data to load for " + filename + ", data: " + line);
-                        children.Add(parseStaticObject(retVal, items[1]));
+                        retVal.addObject(parseStaticObject(retVal, items[1]));
                         break;
-                    case "object":
+                    case "rigid":
                         if (items.Length < 2)
                             throw new InvalidDataException("Not enough data to load for " + filename + ", data: " + line);
-                        children.Add(parseXMLObject(retVal, items[1], Matrix4.Identity));
+                        retVal.addObject(parseRigidObject(retVal, items[1], Matrix4.Identity));
+                        break;
+                    case "multibody":
+                        if (items.Length < 2)
+                            throw new InvalidDataException("Not enough data to load for " + filename + ", data: " + line);
+                        retVal.addObject(parseMultibodyObject(retVal, items[1], Matrix4.Identity));
                         break;
                     case "sun":
                         sunTimer = parseSun(items[1]);
@@ -51,7 +55,6 @@ namespace Ascendant.Graphics {
                 }
             }
 
-            retVal.addRootObjects(children);
             retVal.setSun(sunTimer);
             return retVal;
         }
@@ -147,7 +150,7 @@ namespace Ascendant.Graphics {
             return retVal;
         }
 
-        static private GameObject parseXMLObject(World world, string filename, Matrix4 parentTransform) {
+        static private RigidBodyObject parseRigidObject(World world, string filename, Matrix4 parentTransform) {
             XDocument xdocument = XDocument.Load(AppConfig.Default.itempath + @"\base\" + filename);
             var gObject = xdocument.Element("model");
             var modelType = (string)gObject.Attribute("type");
@@ -214,7 +217,7 @@ namespace Ascendant.Graphics {
                     float.Parse((string)angularMomentumElement.Element("z") ?? "0")
                 );
             }
-            var children = new Dictionary<GameObject, ConeTwist>();
+            var children = new Dictionary<RigidBodyObject, ConeTwist>();
             var childElementEnumerable = gObject.Element("children");
             if (childElementEnumerable != null) {
                 foreach (var childElement in childElementEnumerable.Elements()) {
@@ -283,16 +286,197 @@ namespace Ascendant.Graphics {
                             Matrix4 TranslateMatrix = Matrix4.CreateTranslation(position);
                             Matrix4 RotateMatrix = Matrix4.CreateFromQuaternion(orientation);
                             Matrix4 MyTransform = parentTransform * ScaleMatrix * RotateMatrix * TranslateMatrix;
-                            children.Add(parseXMLObject(world, childFile, MyTransform), constraint);
+                            children.Add(parseRigidObject(world, childFile, MyTransform), constraint);
                             break;
                     }
                 }
             }
             int matIndex = MaterialLoader.AddMaterial(mat);
-            GameObject obj = new RigidBodyObject(world, matIndex, lightList, children, mass, position, momentum, orientation, scale, angularMomentum, mesh, parentTransform);
+            RigidBodyObject obj = new RigidBodyObject(
+                world, children, mass, position, momentum, orientation, scale, 
+                angularMomentum, mesh, parentTransform, matIndex, lightList);
             return obj;
         }
 
+        static private MultiBodyPart parseMultibodyPart(string filename) {
+            MultiBodyPart part = new MultiBodyPart();
+            //TODO load shape
+            part.mass = 10f;
+            part.shape = new BulletSharp.BoxShape(new Vector3(.5f, 2f, .25f));
+            return part;
+        }
+
+        static private MultiBodyObject parseMultibodyObject(World world, string filename, Matrix4 parentTransform) {
+            XDocument xdocument = XDocument.Load(AppConfig.Default.itempath + @"\base\" + filename);
+            var gObject = xdocument.Element("model");
+            var modelType = (string)gObject.Attribute("type");
+            var mesh = parseMesh((string)gObject.Element("mesh"));
+            var materialElement = gObject.Element("material");
+            Material mat;
+            if (materialElement != null) {
+                mat = parseMaterial((string)materialElement.Element("file"), (string)materialElement.Element("type"));
+            } else {
+                mat = parseMaterial(null, null);
+            }
+            var lightList = new List<Lighting.PointLight>();
+            var pointLightElement = gObject.Element("point_lights");
+            if (pointLightElement != null) {
+                foreach (var lightElement in pointLightElement.Elements("light")) {
+                    var light = parseLighting((string)lightElement);
+                    lightList.Add(light);
+                }
+            }
+            var scale = Vector3.One;
+            var scaleElement = gObject.Element("scale");
+            if (scaleElement != null) {
+                scale = new Vector3(
+                    float.Parse((string)scaleElement.Element("x") ?? "1"),
+                    float.Parse((string)scaleElement.Element("y") ?? "1"),
+                    float.Parse((string)scaleElement.Element("z") ?? "1"));
+            }
+            var position = new Vector3(0);
+            var positionElement = gObject.Element("position");
+            if (positionElement != null) {
+                position = new Vector3(
+                    float.Parse((string)positionElement.Element("x") ?? "0"),
+                    float.Parse((string)positionElement.Element("y") ?? "0"),
+                    float.Parse((string)positionElement.Element("z") ?? "0")
+                );
+            }
+            var orientation = Quaternion.FromAxisAngle(Vector3.UnitY, 0);
+            var orientationElement = gObject.Element("orientation");
+            if (orientationElement != null) {
+                var orientationNormal = new Vector3(
+                    float.Parse((string)orientationElement.Element("x") ?? "0"),
+                    float.Parse((string)orientationElement.Element("y") ?? "1"),
+                    float.Parse((string)orientationElement.Element("z") ?? "0"));
+                orientation = Quaternion.FromAxisAngle(
+                    orientationNormal,
+                    float.Parse((string)orientationElement.Element("degrees") ?? "0"));
+            }
+            var mass = float.Parse((string)gObject.Element("mass") ?? "0");
+            var momentum = new Vector3(0);
+            var momentumElement = gObject.Element("momentum");
+            if (momentumElement != null) {
+                momentum = new Vector3(
+                    float.Parse((string)momentumElement.Element("x") ?? "0"),
+                    float.Parse((string)momentumElement.Element("y") ?? "0"),
+                    float.Parse((string)momentumElement.Element("z") ?? "0")
+                );
+            }
+            var angularMomentum = new Vector3(0);
+            var angularMomentumElement = gObject.Element("angularmomentum");
+            if (angularMomentumElement != null) {
+                angularMomentum = new Vector3(
+                    float.Parse((string)angularMomentumElement.Element("x") ?? "0"),
+                    float.Parse((string)angularMomentumElement.Element("y") ?? "0"),
+                    float.Parse((string)angularMomentumElement.Element("z") ?? "0")
+                );
+            }
+            var children = new List<Joint>();
+            var childElementEnumerable = gObject.Element("limbs");
+            if (childElementEnumerable != null) {
+                foreach (var childElement in childElementEnumerable.Elements()) {
+                    Joint j = new Joint();
+
+                    j.disableParentCollision = (string)childElement.Element("parentCollision") == "false";
+
+                    var childFile = (string)childElement.Element("model");
+                    j.link = parseMultibodyPart(childFile); //CollisionShape + Joint Children
+
+                    var typeString = (string)childElement.Attribute("type");
+                    switch (typeString) {
+                        case "Fixed":
+                            j.type = Joint.Type.Fixed;
+                            break;
+                        case "Revolute":
+                            j.type = Joint.Type.Revolute;
+                            break;
+                        case "Prismatic":
+                            j.type = Joint.Type.Prismatic;
+                            break;
+                        case "Spherical":
+                            j.type = Joint.Type.Spherical;
+                            break;
+                        case "Planar":
+                            j.type = Joint.Type.Planar;
+                            break;
+                        default:
+                            throw new InvalidDataException("Unrecognized constraint type: " + typeString);
+                    }
+
+                    j.parentComToThisPivotOffset = Vector3.UnitX;
+                    var parentComToThisPivotOffsetElement = childElement.Element("parentComToThisPivotOffset");
+                    if (parentComToThisPivotOffsetElement != null) {
+                        j.parentComToThisPivotOffset = new Vector3(
+                            float.Parse((string)parentComToThisPivotOffsetElement.Element("x") ?? "0"),
+                            float.Parse((string)parentComToThisPivotOffsetElement.Element("y") ?? "0"),
+                            float.Parse((string)parentComToThisPivotOffsetElement.Element("z") ?? "0")
+                        );
+                    }
+
+                    j.rotParentToThis = Quaternion.FromAxisAngle(Vector3.UnitY, 0);
+                    var rotParentToThisElement = childElement.Element("rotParentToThis");
+                    if (rotParentToThisElement != null) {
+                        var rotParentToThisNormal = new Vector3(
+                            float.Parse((string)rotParentToThisElement.Element("x") ?? "0"),
+                            float.Parse((string)rotParentToThisElement.Element("y") ?? "1"),
+                            float.Parse((string)rotParentToThisElement.Element("z") ?? "0"));
+                        j.rotParentToThis = Quaternion.FromAxisAngle(
+                            rotParentToThisNormal,
+                            float.Parse((string)rotParentToThisElement.Element("degrees") ?? "0"));
+                    }
+
+                    switch (j.type) {
+                        case Joint.Type.Prismatic:
+                        case Joint.Type.Revolute:
+                            j.movementAxis = Vector3.UnitX;
+                            var movementAxisElement = childElement.Element("movementAxis");
+                            if (movementAxisElement != null) {
+                                j.movementAxis = new Vector3(
+                                    float.Parse((string)movementAxisElement.Element("x") ?? "0"),
+                                    float.Parse((string)movementAxisElement.Element("y") ?? "0"),
+                                    float.Parse((string)movementAxisElement.Element("z") ?? "0")
+                                );
+                            }
+                            break;
+                    }
+                    switch (j.type) {
+                        case Joint.Type.Fixed:
+                        case Joint.Type.Prismatic:
+                        case Joint.Type.Revolute:
+                        case Joint.Type.Spherical:
+                            j.thisPivotToThisComOffset = Vector3.UnitX;
+                            var thisPivotToThisComOffsetElement = childElement.Element("thisPivotToThisComOffset");
+                            if (thisPivotToThisComOffsetElement != null) {
+                                j.thisPivotToThisComOffset = new Vector3(
+                                   float.Parse((string)thisPivotToThisComOffsetElement.Element("x") ?? "0"),
+                                   float.Parse((string)thisPivotToThisComOffsetElement.Element("y") ?? "0"),
+                                   float.Parse((string)thisPivotToThisComOffsetElement.Element("z") ?? "0")
+                               );
+                            }
+                            break;
+                    }
+
+                    children.Add(j);
+                }
+            }
+            int matIndex = MaterialLoader.AddMaterial(mat);
+            MultiBodyObject obj = new MultiBodyObject(world,
+                true, //IsBase
+                matIndex,
+                lightList,
+                children,
+                mass,
+                position,
+                momentum,
+                orientation,
+                scale,
+                angularMomentum,
+                mesh,
+                parentTransform);
+            return obj;
+        }
         //static private MovableObject parseDynamicObject(World world, string filename) {
         //    StreamReader reader = File.OpenText(AppConfig.Default.itempath + @"\base\" + filename);
         //    string line;

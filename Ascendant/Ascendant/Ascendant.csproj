@@ -91,9 +91,9 @@
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BulletSharp, Version=2.83.0.0, Culture=neutral, processorArchitecture=x86">
+    <Reference Include="BulletSharp, Version=2.83.5.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\BulletSharp.dll</HintPath>
+      <HintPath>lib\BulletSharp.dll</HintPath>
     </Reference>
     <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppConfig.cs" />
+    <Compile Include="DisplayWorld.cs" />
     <Compile Include="Graphics\FPCamera.cs" />
     <Compile Include="Graphics\Lighting.cs" />
     <Compile Include="Graphics\Material.cs" />
@@ -121,7 +122,10 @@
     <Compile Include="Graphics\objects\textures\LoaderDDS.cs" />
     <Compile Include="Graphics\objects\textures\LoaderGDI.cs" />
     <Compile Include="Graphics\objects\textures\LoaderStatics.cs" />
+    <Compile Include="PhysicsWorld.cs" />
     <Compile Include="Physics\Constraint.cs" />
+    <Compile Include="Physics\DisplayObject.cs" />
+    <Compile Include="Physics\IRigidBody.cs" />
     <Compile Include="Physics\RigidBodyObject.cs" />
     <Compile Include="Physics\StaticObject.cs" />
     <Compile Include="Physics\GameObject.cs" />
@@ -158,6 +162,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Graphics\objects\base\Multibody.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="QuickFont\ChangeLog.txt" />
     <None Include="app.config" />
     <Content Include="Graphics\objects\base\Multijoint.xml">

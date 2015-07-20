@@ -6,7 +6,7 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 
 namespace Ascendant.Graphics.objects {
-    class Mesh {
+    public class Mesh {
         public PrimitiveType type { get; private set; }
         public Vector3[] vertices { get; private set; }
         public Vector2[] texCoords { get; private set; }
