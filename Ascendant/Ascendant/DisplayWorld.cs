@@ -134,11 +134,7 @@ namespace Ascendant {
             MaterialLoader.LoadMaterialBufferBlock(program);
         }
 
-        internal void add(IRigidBody newObject) {
-            DisplayObjects.Add(newObject);
-        }
-
-        internal void add(MultiBodyObject newObject) {
+        internal void add(DisplayObject newObject) {
             DisplayObjects.Add(newObject);
         }
     }

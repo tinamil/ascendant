@@ -50,7 +50,7 @@ namespace Ascendant.Physics {
         private Vector3 myScale;
 
         public MultiBody mBody { get; private set; }
-        public ConvexHullShape shape { get; private set; }
+        public MultiBodyPart basePart { get; private set; }
 
         public override Matrix4 ModelToWorld {
             get { return mBody.BaseCollider.WorldTransform; }
@@ -62,6 +62,7 @@ namespace Ascendant.Physics {
             float mass, Vector3 position, Vector3 momentum, Quaternion orientation, Vector3 scale,
             Vector3 angularMomentum, Mesh mesh, Matrix4 parentTransform)
             : base(matNumber, lightList, mesh) {
+           
             this.myScale = scale;
             this.mBodyChildren = children;
             Matrix4 Scale = Matrix4.CreateScale(scale);

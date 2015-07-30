@@ -128,7 +128,6 @@
     <Compile Include="Physics\IRigidBody.cs" />
     <Compile Include="Physics\RigidBodyObject.cs" />
     <Compile Include="Physics\StaticObject.cs" />
-    <Compile Include="Physics\GameObject.cs" />
     <Compile Include="QuickFont\Builder.cs" />
     <Compile Include="QuickFont\Configuration\QFontBuilderConfiguration.cs" />
     <Compile Include="QuickFont\Configuration\QFontConfiguration.cs" />

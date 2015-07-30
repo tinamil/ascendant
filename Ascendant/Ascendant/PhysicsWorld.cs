@@ -50,15 +50,24 @@ namespace Ascendant {
             }
         }
 
+        public void addObject(DisplayObject newObject) {
+            var multiBodyObject = newObject as MultiBodyObject;
+            if(multiBodyObject != null) {
+                addObject(multiBodyObject);
+            }
+            var rigidObject = newObject as IRigidBody;
+            if(rigidObject != null) {
+                addObject(rigidObject);
+            }
+        }
+
         public void addObject(MultiBodyObject newObject) {
             multiBodies.Add(newObject);
-            displayWorld.add(newObject);
             SetupSimulation();
         }
 
         public void addObject(IRigidBody newObject) {
             rigidBodies.Add(newObject);
-            displayWorld.add(newObject);
             SetupSimulation();
         }
 

@@ -43,6 +43,11 @@ namespace Ascendant.Graphics.objects {
             pWorld.Update();
         }
 
+        public void addObject(DisplayObject obj) {
+            pWorld.addObject(obj);
+            displayWorld.add(obj);
+        }
+
         internal void setSun(TimedLinearInterpolator<Sun> sunTimer) {
             displayWorld.lights.setSun(sunTimer);
         }
